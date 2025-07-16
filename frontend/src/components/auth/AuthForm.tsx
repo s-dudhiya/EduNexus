@@ -16,6 +16,7 @@ interface FormData {
   email: string;
   password: string;
   rememberMe: boolean;
+  role: string;
 }
 
 interface FormErrors {
@@ -33,7 +34,8 @@ export const AuthForm = () => {
   const [formData, setFormData] = useState<FormData>({
     email: '',
     password: '',
-    rememberMe: false
+    rememberMe: false,
+    role: 'student'
   });
   
   const [errors, setErrors] = useState<FormErrors>({});
@@ -80,13 +82,8 @@ export const AuthForm = () => {
     setErrors({});
 
     try {
-      const response = await axios.post('/api/token/', {
-        email: formData.email,
-        password: formData.password,
-      });
-      const { access, refresh } = response.data;
-      login(access, refresh);
-      navigate('/dashboard');
+      const { access, refresh, user } = await login(formData.email, formData.password, formData.role);
+      navigate(user.role === 'faculty' ? '/faculty-dashboard' : '/dashboard');
     } catch (error: any) {
       if (error.response && error.response.data) {
         setErrors({ api: error.response.data.detail });
@@ -103,16 +100,17 @@ export const AuthForm = () => {
   };
   
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-hero">
+    <div className="min-h-screen flex flex-col bg-gradient-hero">
       {/* Top Banner */}
-      <div className="absolute top-0 left-0 right-0 bg-white/10 backdrop-blur-sm border-b border-white/20 p-4">
+      <div className="absolute top-0 left-0 right-0 bg-white/10 backdrop-blur-sm border-b border-white/20 p-4 h-24">
         <div className="max-w-md mx-auto text-center">
           <h1 className="text-2xl font-bold text-white mb-1">Welcome to Greenfield Tech University</h1>
           <p className="text-white/80 text-sm">Sign in to access your EduNexus student dashboard</p>
         </div>
       </div>
 
-      <Card className="w-full max-w-md shadow-elevation mt-20">
+      <div className="flex items-center justify-center p-4 mt-24">
+        <Card className="w-full max-w-md shadow-elevation">
         <CardHeader className="text-center space-y-2">
           <div className="mx-auto w-12 h-12 bg-primary rounded-full flex items-center justify-center">
             <GraduationCap className="h-6 w-6 text-white" />
@@ -192,6 +190,19 @@ export const AuthForm = () => {
                   )}
                 </div>
 
+                <div className="space-y-2">
+                  <Label htmlFor="role">Role</Label>
+                  <Select value={formData.role} onValueChange={(value) => handleInputChange('role', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select your role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="student">Student</SelectItem>
+                      <SelectItem value="faculty">Faculty</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <Checkbox
@@ -221,9 +232,10 @@ export const AuthForm = () => {
           </Tabs>
         </CardContent>
       </Card>
+      </div>
       
       {/* Footer Help */}
-      <div className="absolute bottom-4 left-0 right-0 text-center">
+      <div className="text-center mt-2 mb-4">
         <p className="text-white/80 text-sm">
           Need help? Contact <span className="font-semibold">GreenTech IT Support</span>
         </p>

@@ -9,6 +9,7 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
+import FacultyDashboard from "./pages/FacultyDashboard.jsx";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +28,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/faculty-dashboard"
+              element={
+                <ProtectedRoute>
+                  <FacultyDashboard />
                 </ProtectedRoute>
               }
             />
