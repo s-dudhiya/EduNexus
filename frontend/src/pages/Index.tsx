@@ -140,8 +140,6 @@ const Index = () => {
         <div className="relative text-center mb-12">
           {/* EduNexus Logo */}
           <div className="flex items-center justify-center mb-8">
-            <img src={eduNexusLogo} alt="EduNexus" className="h-24 w-24 mr-4" />
-            <span className="text-2xl font-bold text-white">EduNexus</span>
           </div>
           
           {/* Main Hero Heading */}
@@ -178,13 +176,7 @@ const Index = () => {
             <Link to="/auth">
               <Button size="lg" className="bg-white text-primary hover:bg-white/90 font-semibold">
                 <LogIn className="h-5 w-5 mr-2" />
-                Access your student portal with EduNexus
-              </Button>
-            </Link>
-            <Link to="/auth">
-              <Button size="lg" variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20">
-                <Users className="h-5 w-5 mr-2" />
-                Faculty Access
+                Access your portal with EduNexus
               </Button>
             </Link>
           </div>
