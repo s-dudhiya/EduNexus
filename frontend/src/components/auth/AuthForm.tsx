@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Eye, EyeOff, GraduationCap, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface FormData {
   fullName: string;
@@ -24,6 +27,7 @@ interface FormErrors {
   password?: string;
   confirmPassword?: string;
   role?: string;
+  api?: string;
 }
 
 export const AuthForm = () => {
@@ -31,6 +35,8 @@ export const AuthForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const { login } = useAuth();
+  const navigate = useNavigate();
   
   const [formData, setFormData] = useState<FormData>({
     fullName: '',
@@ -98,18 +104,58 @@ export const AuthForm = () => {
     }
 
     setIsLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      console.log(isSignup ? 'Signup submitted:' : 'Login submitted:', formData);
-    }, 2000);
+    setErrors({});
+
+    if (isSignup) {
+      try {
+        const response = await axios.post('/api/signup/', {
+          full_name: formData.fullName,
+          email: formData.email,
+          password: formData.password,
+          role: formData.role,
+        });
+        console.log('Signup successful:', response.data);
+        // Handle successful signup (e.g., redirect to login, show success message)
+        setActiveTab('login');
+      } catch (error: any) {
+        if (error.response && error.response.data) {
+          const apiErrors = error.response.data;
+          const newErrors: FormErrors = {};
+          for (const key in apiErrors) {
+            newErrors[key as keyof FormErrors] = apiErrors[key][0];
+          }
+          setErrors(newErrors);
+        } else {
+          setErrors({ api: 'An unexpected error occurred. Please try again.' });
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    } else {
+      try {
+        const response = await axios.post('/api/token/', {
+          email: formData.email,
+          password: formData.password,
+        });
+        const { access, refresh } = response.data;
+        login(access, refresh);
+        navigate('/dashboard');
+      } catch (error: any) {
+        if (error.response && error.response.data) {
+          setErrors({ api: error.response.data.detail });
+        } else {
+          setErrors({ api: 'An unexpected error occurred. Please try again.' });
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    }
   };
 
   const handleForgotPassword = () => {
     console.log('Forgot password clicked');
   };
-
+  
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-hero">
       {/* Top Banner */}
@@ -142,6 +188,12 @@ export const AuthForm = () => {
 
             <TabsContent value="login" className="space-y-4 mt-6">
               <form onSubmit={(e) => handleSubmit(e, false)} className="space-y-4">
+                {errors.api && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{errors.api}</AlertDescription>
+                  </Alert>
+                )}
                 <div className="space-y-2">
                   <Label htmlFor="login-email">Email</Label>
                   <Input
@@ -224,6 +276,12 @@ export const AuthForm = () => {
 
             <TabsContent value="signup" className="space-y-4 mt-6">
               <form onSubmit={(e) => handleSubmit(e, true)} className="space-y-4">
+                {errors.api && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{errors.api}</AlertDescription>
+                  </Alert>
+                )}
                 <div className="space-y-2">
                   <Label htmlFor="signup-name">Full Name</Label>
                   <Input

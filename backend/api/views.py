@@ -1,6 +1,8 @@
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
+from rest_framework import generics
+from .models import User
+from .serializers import UserSerializer
 
-@api_view(['GET'])
-def hello_world(request):
-    return Response({'message': 'Hello from Django!'})
+class SignUpView(generics.CreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
