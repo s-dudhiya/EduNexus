@@ -13,37 +13,26 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface FormData {
-  fullName: string;
   email: string;
   password: string;
-  confirmPassword: string;
-  role: string;
   rememberMe: boolean;
 }
 
 interface FormErrors {
-  fullName?: string;
   email?: string;
   password?: string;
-  confirmPassword?: string;
-  role?: string;
   api?: string;
 }
 
 export const AuthForm = () => {
-  const [activeTab, setActiveTab] = useState('login');
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
   
   const [formData, setFormData] = useState<FormData>({
-    fullName: '',
     email: '',
     password: '',
-    confirmPassword: '',
-    role: '',
     rememberMe: false
   });
   
@@ -54,7 +43,7 @@ export const AuthForm = () => {
     return emailRegex.test(email);
   };
 
-  const validateForm = (isSignup: boolean = false) => {
+  const validateForm = () => {
     const newErrors: FormErrors = {};
 
     if (!formData.email) {
@@ -69,22 +58,6 @@ export const AuthForm = () => {
       newErrors.password = 'Password must be at least 6 characters';
     }
 
-    if (isSignup) {
-      if (!formData.fullName) {
-        newErrors.fullName = 'Full name is required';
-      }
-
-      if (!formData.confirmPassword) {
-        newErrors.confirmPassword = 'Please confirm your password';
-      } else if (formData.password !== formData.confirmPassword) {
-        newErrors.confirmPassword = 'Passwords do not match';
-      }
-
-      if (!formData.role) {
-        newErrors.role = 'Please select a role';
-      }
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -96,59 +69,32 @@ export const AuthForm = () => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent, isSignup: boolean = false) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm(isSignup)) {
+    if (!validateForm()) {
       return;
     }
 
     setIsLoading(true);
     setErrors({});
 
-    if (isSignup) {
-      try {
-        const response = await axios.post('/api/signup/', {
-          full_name: formData.fullName,
-          email: formData.email,
-          password: formData.password,
-          role: formData.role,
-        });
-        console.log('Signup successful:', response.data);
-        // Handle successful signup (e.g., redirect to login, show success message)
-        setActiveTab('login');
-      } catch (error: any) {
-        if (error.response && error.response.data) {
-          const apiErrors = error.response.data;
-          const newErrors: FormErrors = {};
-          for (const key in apiErrors) {
-            newErrors[key as keyof FormErrors] = apiErrors[key][0];
-          }
-          setErrors(newErrors);
-        } else {
-          setErrors({ api: 'An unexpected error occurred. Please try again.' });
-        }
-      } finally {
-        setIsLoading(false);
+    try {
+      const response = await axios.post('/api/token/', {
+        email: formData.email,
+        password: formData.password,
+      });
+      const { access, refresh } = response.data;
+      login(access, refresh);
+      navigate('/dashboard');
+    } catch (error: any) {
+      if (error.response && error.response.data) {
+        setErrors({ api: error.response.data.detail });
+      } else {
+        setErrors({ api: 'An unexpected error occurred. Please try again.' });
       }
-    } else {
-      try {
-        const response = await axios.post('/api/token/', {
-          email: formData.email,
-          password: formData.password,
-        });
-        const { access, refresh } = response.data;
-        login(access, refresh);
-        navigate('/dashboard');
-      } catch (error: any) {
-        if (error.response && error.response.data) {
-          setErrors({ api: error.response.data.detail });
-        } else {
-          setErrors({ api: 'An unexpected error occurred. Please try again.' });
-        }
-      } finally {
-        setIsLoading(false);
-      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -172,7 +118,7 @@ export const AuthForm = () => {
             <GraduationCap className="h-6 w-6 text-white" />
           </div>
           <CardTitle className="text-2xl font-bold text-primary">
-            {activeTab === 'login' ? 'EduNexus Login' : 'Join EduNexus'}
+            EduNexus Login
           </CardTitle>
           <CardDescription>
             Access your connected digital campus
@@ -180,14 +126,13 @@ export const AuthForm = () => {
         </CardHeader>
 
         <CardContent>
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+          <Tabs value="login" className="w-full">
+            <TabsList className="grid w-full grid-cols-1">
               <TabsTrigger value="login">Login</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
             </TabsList>
 
             <TabsContent value="login" className="space-y-4 mt-6">
-              <form onSubmit={(e) => handleSubmit(e, false)} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-4">
                 {errors.api && (
                   <Alert variant="destructive">
                     <AlertCircle className="h-4 w-4" />
@@ -270,153 +215,6 @@ export const AuthForm = () => {
 
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? 'Signing in...' : 'Sign In'}
-                </Button>
-              </form>
-            </TabsContent>
-
-            <TabsContent value="signup" className="space-y-4 mt-6">
-              <form onSubmit={(e) => handleSubmit(e, true)} className="space-y-4">
-                {errors.api && (
-                  <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>{errors.api}</AlertDescription>
-                  </Alert>
-                )}
-                <div className="space-y-2">
-                  <Label htmlFor="signup-name">Full Name</Label>
-                  <Input
-                    id="signup-name"
-                    type="text"
-                    placeholder="Enter your full name"
-                    value={formData.fullName}
-                    onChange={(e) => handleInputChange('fullName', e.target.value)}
-                    className={errors.fullName ? 'border-destructive' : ''}
-                    required
-                  />
-                  {errors.fullName && (
-                    <p className="text-sm text-destructive flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3" />
-                      {errors.fullName}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
-                  <Input
-                    id="signup-email"
-                    type="email"
-                    placeholder="Enter your email"
-                    value={formData.email}
-                    onChange={(e) => handleInputChange('email', e.target.value)}
-                    className={errors.email ? 'border-destructive' : ''}
-                    required
-                  />
-                  {errors.email && (
-                    <p className="text-sm text-destructive flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3" />
-                      {errors.email}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="signup-role">Role</Label>
-                  <Select value={formData.role} onValueChange={(value) => handleInputChange('role', value)}>
-                    <SelectTrigger className={errors.role ? 'border-destructive' : ''}>
-                      <SelectValue placeholder="Select your role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="student">Student</SelectItem>
-                      <SelectItem value="faculty">Faculty</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {errors.role && (
-                    <p className="text-sm text-destructive flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3" />
-                      {errors.role}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
-                  <div className="relative">
-                    <Input
-                      id="signup-password"
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="Create a password"
-                      value={formData.password}
-                      onChange={(e) => handleInputChange('password', e.target.value)}
-                      className={errors.password ? 'border-destructive pr-10' : 'pr-10'}
-                      required
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
-                      {showPassword ? (
-                        <EyeOff className="h-4 w-4 text-muted-foreground" />
-                      ) : (
-                        <Eye className="h-4 w-4 text-muted-foreground" />
-                      )}
-                    </Button>
-                  </div>
-                  {errors.password && (
-                    <p className="text-sm text-destructive flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3" />
-                      {errors.password}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="signup-confirm-password">Confirm Password</Label>
-                  <div className="relative">
-                    <Input
-                      id="signup-confirm-password"
-                      type={showConfirmPassword ? 'text' : 'password'}
-                      placeholder="Confirm your password"
-                      value={formData.confirmPassword}
-                      onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
-                      className={errors.confirmPassword ? 'border-destructive pr-10' : 'pr-10'}
-                      required
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    >
-                      {showConfirmPassword ? (
-                        <EyeOff className="h-4 w-4 text-muted-foreground" />
-                      ) : (
-                        <Eye className="h-4 w-4 text-muted-foreground" />
-                      )}
-                    </Button>
-                  </div>
-                  {errors.confirmPassword && (
-                    <p className="text-sm text-destructive flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3" />
-                      {errors.confirmPassword}
-                    </p>
-                  )}
-                </div>
-
-                <Alert>
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription className="text-sm">
-                    By signing up, you agree to our terms and conditions.
-                  </AlertDescription>
-                </Alert>
-
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? 'Creating account...' : 'Create Account'}
                 </Button>
               </form>
             </TabsContent>
