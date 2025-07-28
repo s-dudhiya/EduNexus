@@ -43,10 +43,10 @@ export const AuthForm = () => {
 
     if (!formData.password) {
       newErrors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+    } else if (formData.password.length < 4 ||formData.password.length > 4) {
+      newErrors.password = 'Pin Is of 4 Digits';
     }
-
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -60,26 +60,27 @@ export const AuthForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     setIsLoading(true);
     setErrors({});
 
-    try {
-      const { access, refresh, user } = await login(formData.email, formData.password, formData.role);
-      navigate(user.role === 'faculty' ? '/faculty-dashboard' : '/dashboard');
-    } catch (error) {
-      if (error.response && error.response.data) {
-        setErrors({ api: error.response.data.detail });
+    // The login function now returns a result object, it does not throw an error.
+    const result = await login(formData.email, formData.password, formData.role);
+    
+    if (result.success) {
+      // If login is successful, navigate based on the role selected in the form.
+      if (formData.role === 'faculty') {
+        navigate('/faculty-dashboard');
       } else {
-        setErrors({ api: 'An unexpected error occurred. Please try again.' });
+        navigate('/student-dashboard');
       }
-    } finally {
-      setIsLoading(false);
+    } else {
+      // If login fails, display the specific error message from the API.
+      setErrors({ api: result.error || 'Login failed. Please check your credentials.' });
     }
+    
+    setIsLoading(false);
   };
 
   const handleForgotPassword = () => {

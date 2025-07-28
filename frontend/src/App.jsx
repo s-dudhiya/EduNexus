@@ -6,10 +6,10 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth.jsx";
-import Dashboard from "./pages/Dashboard";
+import StudentDashboard from "./pages/StudentDashboard";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
-import FacultyDashboard from "./pages/FacultyDashboard.jsx";
+import FacultyDashboard from "./pages/FacultyDashboard";
 
 const queryClient = new QueryClient();
 
@@ -24,10 +24,10 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route
-              path="/dashboard"
+              path="/student-dashboard"
               element={
                 <ProtectedRoute>
-                  <Dashboard />
+                  <StudentDashboard />
                 </ProtectedRoute>
               }
             />
