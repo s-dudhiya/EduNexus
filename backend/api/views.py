@@ -7,17 +7,24 @@ from django.contrib.auth.models import User
 from django.conf import settings
 import jwt
 import datetime
-
-from .models import StudentData, Faculty
+from rest_framework.permissions import AllowAny
+import subprocess
+import tempfile
+import sys
+import os
+from .models import StudentData, Faculty ,ExamPaper,ExamResult
 from .serializers import (
     CustomLoginSerializer, 
     UserSerializer, 
     StudentDataSerializer, 
-    FacultySerializer
+    FacultySerializer,
+    ExamPaperSerializer,
+    ExamResultSerializer
 )
 
 # This is the new, improved view for your custom login logic.
 class CustomLoginView(APIView):
+    permission_classes = [AllowAny]
     def post(self, request, *args, **kwargs):
         serializer = CustomLoginSerializer(data=request.data)
         if not serializer.is_valid():
@@ -124,3 +131,120 @@ class VerifyTokenView(APIView):
         except (jwt.ExpiredSignatureError, jwt.InvalidTokenError, Exception) as e:
             # If the token is expired, invalid, or the user doesn't exist, return an error.
             return Response({'detail': 'Token is invalid or expired.'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+class ExamPaperListView(generics.ListAPIView):
+    """
+    This view provides a list of all exam papers from the database.
+    """
+    queryset = ExamPaper.objects.all()
+    serializer_class = ExamPaperSerializer
+    permission_classes = [IsAuthenticated]
+    
+class RunCodeView(APIView):
+    """
+    This view runs student code against a list of JSON test cases.
+    The code must pass all test cases to be considered correct.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        user_code = request.data.get('code')
+        exam_paper_id = request.data.get('exam_paper_id')
+
+        if not user_code or not exam_paper_id:
+            return Response(
+                {'error': 'Code and exam paper ID are required.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            exam_paper = ExamPaper.objects.get(id=exam_paper_id)
+            test_cases = exam_paper.test_output_2 
+        except ExamPaper.DoesNotExist:
+            return Response(
+                {'error': 'Exam paper not found.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # --- FIX: Check if test_cases is a list ---
+        if not isinstance(test_cases, list):
+            return Response(
+                {'error': 'Test case data is not a valid list for this exam paper.'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        temp_file_path = ''
+        try:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".py", mode='w', encoding='utf-8') as temp:
+                temp.write(user_code)
+                temp_file_path = temp.name
+            
+            all_passed = True
+            first_output = ""
+            first_error = ""
+
+            # --- FIX: Loop through each test case from the JSON array ---
+            for i, case in enumerate(test_cases):
+                if not isinstance(case, dict):
+                    all_passed = False
+                    first_error = f"Test case at index {i} is not a valid object."
+                    break
+
+                input_data = case.get("Input")
+                expected_output = case.get("Output", "").strip()
+
+                run = subprocess.run(
+                    [sys.executable, temp_file_path],
+                    input=input_data,
+                    capture_output=True,
+                    text=True,
+                    timeout=5
+                )
+
+                output = run.stdout.strip()
+                error = run.stderr.strip()
+
+                # Save the output and error of the first test case to show the user
+                if i == 0:
+                    first_output = output
+                    first_error = error
+
+                if run.returncode != 0: # Code crashed
+                    all_passed = False
+                    break # Exit the loop on the first failure
+
+                if output != expected_output: # Output did not match
+                    all_passed = False
+                    break # Exit the loop on the first failure
+            
+            # Return the overall result
+            return Response({
+                'output': first_output,
+                'error': first_error,
+                'passed': all_passed
+            })
+
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        finally:
+            if temp_file_path and os.path.exists(temp_file_path):
+                os.remove(temp_file_path)
+
+
+class SubmitExamView(APIView):
+    """
+    This view receives the calculated exam scores and saves them to the ExamResult table.
+    """
+    permission_classes = [IsAuthenticated] # Ensures only logged-in users can submit
+
+    def post(self, request, *args, **kwargs):
+        serializer = ExamResultSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'status': 'success', 'message': 'Exam results saved successfully.'}, status=status.HTTP_201_CREATED)
+        
+        # If the data is invalid, return the errors
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

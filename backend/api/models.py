@@ -14,7 +14,7 @@ class ExamPaper(models.Model):
     subject_id = models.IntegerField()
     code_question = models.CharField(max_length=5600)
     test_output_1 = models.CharField(max_length=2500)
-    test_output_2 = models.CharField(max_length=5555)
+    test_output_2 = models.JSONField()
     mcq_ques = models.JSONField()
 
 class ExamResult(models.Model):
