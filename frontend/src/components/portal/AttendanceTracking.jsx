@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -20,49 +21,24 @@ import {
 
 export function AttendanceTracking({ 
   userRole = 'student',
-  attendanceData = [
-    { id: '1', date: '2024-01-15', subject: 'Data Structures', status: 'present', time: '09:00 AM', location: 'Room 101' },
-    { id: '2', date: '2024-01-16', subject: 'Web Development', status: 'present', time: '11:00 AM', location: 'Lab 2' },
-    { id: '3', date: '2024-01-17', subject: 'Database Systems', status: 'late', time: '10:15 AM', location: 'Room 205' },
-    { id: '4', date: '2024-01-18', subject: 'Machine Learning', status: 'absent' },
-    { id: '5', date: '2024-01-19', subject: 'Software Engineering', status: 'present', time: '02:00 PM', location: 'Room 303' },
-  ]
 }) {
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [isCheckingIn, setIsCheckingIn] = useState(false);
+  const [subjectAttendance, setSubjectAttendance] = useState([]);
+
+  useEffect(() => {
+    axios.get('/api/attendance/')
+      .then(response => {
+        setSubjectAttendance(response.data);
+      })
+      .catch(error => {
+        console.error('Error fetching attendance data:', error);
+      });
+  }, []);
 
   // Calculate attendance statistics
-  const totalClasses = attendanceData.length;
-  const presentClasses = attendanceData.filter(record => record.status === 'present').length;
-  const lateClasses = attendanceData.filter(record => record.status === 'late').length;
-  const absentClasses = attendanceData.filter(record => record.status === 'absent').length;
-  const attendancePercentage = Math.round((presentClasses / totalClasses) * 100);
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'present': return 'bg-success';
-      case 'late': return 'bg-warning';
-      case 'absent': return 'bg-destructive';
-      default: return 'bg-muted';
-    }
-  };
-
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'present': return <UserCheck className="h-4 w-4" />;
-      case 'late': return <Clock className="h-4 w-4" />;
-      case 'absent': return <UserX className="h-4 w-4" />;
-      default: return null;
-    }
-  };
-
-  const handleCheckIn = () => {
-    setIsCheckingIn(true);
-    setTimeout(() => {
-      setIsCheckingIn(false);
-      // Mock successful check-in
-    }, 2000);
-  };
+  const totalLectures = subjectAttendance.reduce((sum, rec) => sum + rec.total_lectures, 0);
+  const totalAttended = subjectAttendance.reduce((sum, rec) => sum + rec.total_attended, 0);
+  const absentClasses = totalLectures - totalAttended;
+  const attendancePercentage = totalLectures > 0 ? Math.round((totalAttended / totalLectures) * 100) : 0;
 
   if (userRole === 'faculty') {
     return (
@@ -228,9 +204,9 @@ export function AttendanceTracking({
 
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-3 space-y-6">
             {/* Statistics Cards */}
-            <div className="grid md:grid-cols-4 gap-4">
+            <div className="grid md:grid-cols-3 gap-4">
               <Card className="shadow-card">
                 <CardContent className="p-4 text-center">
                   <div className="text-2xl font-bold text-primary">{attendancePercentage}%</div>
@@ -240,14 +216,8 @@ export function AttendanceTracking({
               </Card>
               <Card className="shadow-card">
                 <CardContent className="p-4 text-center">
-                  <div className="text-2xl font-bold text-success">{presentClasses}</div>
+                  <div className="text-2xl font-bold text-success">{totalAttended}</div>
                   <p className="text-sm text-muted-foreground">Present</p>
-                </CardContent>
-              </Card>
-              <Card className="shadow-card">
-                <CardContent className="p-4 text-center">
-                  <div className="text-2xl font-bold text-warning">{lateClasses}</div>
-                  <p className="text-sm text-muted-foreground">Late</p>
                 </CardContent>
               </Card>
               <Card className="shadow-card">
@@ -258,126 +228,34 @@ export function AttendanceTracking({
               </Card>
             </div>
 
-            {/* Attendance Records */}
+            {/* Subject-wise Attendance */}
             <Card className="shadow-card">
               <CardHeader>
-                <CardTitle>Recent Attendance</CardTitle>
+                <CardTitle>Subject-wise Attendance</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {attendanceData.map((record) => (
-                    <div key={record.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center gap-4">
-                        <div className={`w-4 h-4 rounded-full ${getStatusColor(record.status)}`} />
-                        <div>
-                          <p className="font-medium">{record.subject}</p>
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <span className="flex items-center gap-1">
-                              <CalendarIcon className="h-3 w-3" />
-                              {record.date}
-                            </span>
-                            {record.time && (
-                              <span className="flex items-center gap-1">
-                                <Clock className="h-3 w-3" />
-                                {record.time}
-                              </span>
-                            )}
-                            {record.location && (
-                              <span className="flex items-center gap-1">.
-                                <MapPin className="h-3 w-3" />
-                                {record.location}
-                              </span>
-                            )}
-                          </div>
+                  {subjectAttendance.map((item, index) => {
+                    const subjectPercentage = item.total_lectures > 0 ? Math.round((item.total_attended / item.total_lectures) * 100) : 0;
+                    return (
+                      <div key={index} className="space-y-1">
+                        <div className="flex justify-between text-sm">
+                          <span>Subject {item.subject_id}</span>
+                          <span className={subjectPercentage < 75 ? 'text-destructive' : 'text-success'}>
+                            {subjectPercentage}%
+                          </span>
+                        </div>
+                        <Progress 
+                          value={subjectPercentage} 
+                          className="h-2"
+                        />
+                        <div className="text-xs text-muted-foreground">
+                          Attended: {item.total_attended} / {item.total_lectures}
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        {getStatusIcon(record.status)}
-                        <Badge 
-                          variant={record.status === 'present' ? 'default' : record.status === 'late' ? 'secondary' : 'destructive'}
-                        >
-                          {record.status}
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Quick Check-in */}
-            <Card className="shadow-card">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm">Quick Check-in</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Button 
-                  className="w-full gap-2" 
-                  onClick={handleCheckIn}
-                  disabled={isCheckingIn}
-                >
-                  {isCheckingIn ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground" />
-                      Checking in...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="h-4 w-4" />
-                      Check In Now
-                    </>
-                  )}
-                </Button>
-                <Button variant="outline" className="w-full gap-2">
-                  <QrCode className="h-4 w-4" />
-                  Scan QR Code
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Calendar */}
-            <Card className="shadow-card">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm">Calendar</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Calendar
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={setSelectedDate}
-                  className="rounded-md border-0"
-                />
-              </CardContent>
-            </Card>
-
-            {/* Subject-wise Attendance */}
-            <Card className="shadow-card">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm">Subject-wise Attendance</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {[
-                  { subject: 'Data Structures', percentage: 85 },
-                  { subject: 'Web Development', percentage: 90 },
-                  { subject: 'Database Systems', percentage: 70 },
-                  { subject: 'Machine Learning', percentage: 65 },
-                ].map((item, index) => (
-                  <div key={index} className="space-y-1">
-                    <div className="flex justify-between text-sm">
-                      <span>{item.subject}</span>
-                      <span className={item.percentage < 75 ? 'text-destructive' : 'text-success'}>
-                        {item.percentage}%
-                      </span>
-                    </div>
-                    <Progress 
-                      value={item.percentage} 
-                      className="h-2"
-                    />
-                  </div>
-                ))}
               </CardContent>
             </Card>
           </div>

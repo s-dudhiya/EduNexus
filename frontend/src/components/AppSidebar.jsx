@@ -43,12 +43,6 @@ const modules = [
     icon: Users
   },
   {
-    id: 'courses',
-    title: 'Course Management',
-    description: 'Manage your courses',
-    icon: GraduationCap
-  },
-  {
     id: 'exams',
     title: 'Exam Portal',
     description: 'Online examinations',
@@ -61,40 +55,16 @@ const modules = [
     icon: MessageSquare
   },
   {
-    id: 'library',
-    title: 'Library',
-    description: 'Access library resources',
-    icon: BookOpen
-  },
-  {
     id: 'results',
     title: 'Results',
     description: 'View academic results',
     icon: BarChart3
   },
   {
-    id: 'fees',
-    title: 'Financial Services',
-    description: 'Fee payment and services',
-    icon: DollarSign
-  },
-  {
-    id: 'feedback',
-    title: 'Feedback',
-    description: 'Course feedback system',
-    icon: Star
-  },
-  {
     id: 'notes',
     title: 'Notes',
     description: 'Upload and manage notes',
     icon: FileText
-  },
-  {
-    id: 'campus',
-    title: 'Campus Services',
-    description: 'Campus facilities and services',
-    icon: MapPin
   }
 ];
 

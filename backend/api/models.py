@@ -60,3 +60,11 @@ class SubjectDetails(models.Model):
     subject_id = models.IntegerField(primary_key=True)
     subject_name = models.CharField(max_length=250)
     sem = models.IntegerField()
+
+class Attendance(models.Model):
+    id = models.AutoField(primary_key=True)
+    enrollment_no=models.IntegerField()
+    semester=models.IntegerField()
+    subject_id=models.IntegerField()
+    total_lectures=models.IntegerField()
+    total_attended=models.IntegerField()

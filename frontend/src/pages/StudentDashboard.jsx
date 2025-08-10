@@ -22,15 +22,11 @@ import {
 } from 'lucide-react';
 import DashboardHome from '@/components/portal/Dashboard';
 import { AttendanceTracking } from '@/components/portal/AttendanceTracking';
-import { CourseManagement } from '@/components/portal/CourseManagement';
 import { ExamPortal } from '@/components/portal/ExamPortal';
 import { FacultyStudentChat } from '@/components/portal/FacultyStudentChat';
-import { LibraryPortal } from '@/components/portal/LibraryPortal';
 import { ResultViewing } from '@/components/portal/ResultViewing';
-import { FinancialServices } from '@/components/portal/FinancialServices';
-import { FeedbackSystem } from '@/components/portal/FeedbackSystem';
 import { NotesUpload } from '@/components/portal/NotesUpload';
-import { CampusServices } from '@/components/portal/CampusServices';
+
 
 const StudentDashboard = () => {
   const [activeModule, setActiveModule] = useState('dashboard');
@@ -47,11 +43,6 @@ const StudentDashboard = () => {
       component: AttendanceTracking
     },
     {
-      id: 'courses',
-      title: 'Course Management',
-      component: CourseManagement
-    },
-    {
       id: 'exams',
       title: 'Exam Portal',
       component: ExamPortal
@@ -62,35 +53,15 @@ const StudentDashboard = () => {
       component: FacultyStudentChat
     },
     {
-      id: 'library',
-      title: 'Library',
-      component: LibraryPortal
-    },
-    {
       id: 'results',
       title: 'Results',
       component: ResultViewing
-    },
-    {
-      id: 'fees',
-      title: 'Financial Services',
-      component: FinancialServices
-    },
-    {
-      id: 'feedback',
-      title: 'Feedback',
-      component: FeedbackSystem
     },
     {
       id: 'notes',
       title: 'Notes',
       component: NotesUpload
     },
-    {
-      id: 'campus',
-      title: 'Campus Services',
-      component: CampusServices
-    }
   ];
 
   const ActiveComponent = modules.find(m => m.id === activeModule)?.component || DashboardHome;

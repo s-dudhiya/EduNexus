@@ -9,7 +9,8 @@ from .models import (
     ExamPaper,
     ExamResult,
     PastMarks,
-    PracticalMarks
+    PracticalMarks,
+    Attendance
 )
 
 # First, unregister the default User admin that Django provides.
@@ -30,3 +31,4 @@ admin.site.register(ExamPaper)
 admin.site.register(ExamResult)
 admin.site.register(PastMarks)
 admin.site.register(PracticalMarks)
+admin.site.register(Attendance)
