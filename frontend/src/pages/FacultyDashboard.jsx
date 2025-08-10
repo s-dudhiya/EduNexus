@@ -9,7 +9,7 @@ import {
   Users, 
   MessageSquare, 
   BarChart3,
-  FileText,
+  FileText, 
   ClipboardCheck,
   User,
   Settings,
@@ -21,13 +21,31 @@ import {
   Calendar,
   Menu,
   X,
-  Briefcase
+  Briefcase,
+  Mail,
+  Phone,
+  MapPin,
+  GraduationCap
 } from 'lucide-react';
-import eduNexusLogo from '@/assets/edunexus-logo.png';
-import greenTechCrest from '@/assets/greentech-crest.png';
+import { AppSidebar } from '@/components/AppSidebar';
+import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
+
+const facultyModules = [
+  { id: 'dashboard', title: 'Dashboard', icon: Home },
+  { id: 'profile', title: 'Profile', icon: User },
+  { id: 'courses', title: 'My Courses', icon: BookOpen },
+  { id: 'submissions', title: 'Submissions', icon: ClipboardCheck },
+  { id: 'gradebook', title: 'Gradebook', icon: BarChart3 },
+  { id: 'schedule', title: 'My Schedule', icon: Calendar },
+  { id: 'messages', title: 'Messages', icon: MessageSquare },
+  { id: 'research', title: 'Research', icon: Briefcase },
+  { id: 'settings', title: 'Settings', icon: Settings }
+];
 
 const FacultyDashboard = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [activeModule, setActiveModule] = useState('dashboard');
   const { logout, user } = useAuth();
   const navigate = useNavigate();
 
@@ -35,6 +53,32 @@ const FacultyDashboard = () => {
     logout();
     navigate('/auth');
   };
+
+  // Static data for fields not yet in the database model
+  const staticData = {
+    phone: "998877556623",
+    office: "Building A, Room 210",
+    department: "Computer Science",
+  };
+
+  const notifications = [
+    {
+      id: 1,
+      title: "New Submission in CS101",
+      message: "John Smith submitted Project 2.",
+      time: "5 minutes ago",
+      type: "success",
+      read: false
+    },
+    {
+      id: 2,
+      title: "Faculty Meeting Reminder",
+      message: "Department meeting at 3:00 PM today.",
+      time: "1 hour ago",
+      type: "info",
+      read: false
+    },
+  ];
 
   const modules = [
     {
@@ -92,275 +136,187 @@ const FacultyDashboard = () => {
       badge: 'Faculty Tool'
     }
   ];
-
-  const sidebarItems = [
-    { icon: Home, label: 'Dashboard', active: true },
-    { icon: User, label: 'Profile' },
-    { icon: BookOpen, label: 'My Courses' },
-    { icon: ClipboardCheck, label: 'Submissions' },
-    { icon: BarChart3, label: 'Gradebook' },
-    { icon: Calendar, label: 'My Schedule' },
-    { icon: MessageSquare, label: 'Messages' },
-    { icon: Briefcase, label: 'Research' },
-    { icon: Settings, label: 'Settings' }
-  ];
+  
+  const getInitials = (name = '') => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+  };
 
   return (
-    <div className="flex min-h-screen bg-muted/40">
-      {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out lg:translate-x-0 lg:flex lg:flex-col`}>
-        <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
-          <div className="flex items-center">
-            <img src={greenTechCrest} alt="GreenTech" className="h-8 w-8" />
-            <div className="ml-2">
-              <span className="text-sm font-bold text-gray-900 block">GreenTech</span>
-              <span className="text-xs text-gray-600">University</span>
-            </div>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="lg:hidden"
-            onClick={() => setSidebarOpen(false)}
-          >
-            <X className="h-5 w-5" />
-          </Button>
-        </div>
+    <SidebarProvider>
+      <div className="flex min-h-screen w-full bg-background">
+        <AppSidebar 
+          activeModule={activeModule} 
+          onModuleChange={setActiveModule}
+          modules={facultyModules}
+        />
         
-        <nav className="flex-1 mt-8 px-4 space-y-1">
-          {sidebarItems.map((item, index) => (
-            <a
-              key={index}
-              href="#"
-              className={`flex items-center px-4 py-2 rounded-md text-gray-700 hover:bg-gray-100 transition-colors duration-200 ${
-                item.active ? 'bg-blue-50 text-blue-600 font-semibold' : ''
-              }`}
-            >
-              <item.icon className="h-5 w-5 mr-3" />
-              <span>{item.label}</span>
-            </a>
-          ))}
-        </nav>
-
-        <div className="mt-auto p-4 border-t border-gray-200">
-          <Button onClick={handleLogout} variant="ghost" className="w-full justify-start text-gray-700 hover:text-red-600">
-            <LogOut className="h-5 w-5 mr-3" />
-            Logout
-          </Button>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col lg:ml-64 bg-background">
-        {/* Header */}
-        <header className="sticky top-0 z-30 bg-white shadow-sm border-b border-gray-200">
-          <div className="flex items-center justify-between h-16 px-6">
-            <div className="flex items-center">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="lg:hidden mr-2"
-                onClick={() => setSidebarOpen(true)}
-              >
-                <Menu className="h-5 w-5" />
-              </Button>
-              {/* EduNexus Logo */}
-              <div className="flex items-center mr-6">
-                <img src={eduNexusLogo} alt="EduNexus" className="h-8 w-8" />
-                <span className="ml-2 text-xl font-bold text-primary">EduNexus</span>
-              </div>
-              <h1 className="text-xl font-semibold text-gray-900">GreenTech Academic Dashboard</h1>
+        <div className="flex-1 flex flex-col">
+          {/* Header */}
+          <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-6 shadow-sm">
+            <SidebarTrigger />
+            
+            <div className="flex items-center flex-1">
+              <h1 className="text-xl font-semibold text-foreground">
+                {facultyModules.find(m => m.id === activeModule)?.title || 'Faculty Dashboard'}
+              </h1>
             </div>
             
-            <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="sm">
-                <Search className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" size="sm" className="relative">
-                <Bell className="h-5 w-5" />
-                <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full"></span>
-              </Button>
-              <div className="flex items-center space-x-2">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src="/placeholder.svg" />
-                  <AvatarFallback>{user?.full_name?.charAt(0) || 'F'}</AvatarFallback>
-                </Avatar>
-                <div className="text-sm">
-                  <div className="font-medium">{user?.full_name || 'Faculty Member'}</div>
-                  <div className="text-xs text-gray-500">Professor, CSE</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </header>
+            <div className="flex items-center gap-2">
+              {/* Notifications Modal */}
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="icon" className="relative h-9 w-9">
+                    <Bell className="h-4 w-4" />
+                    <span className="absolute -top-1 -right-1 h-2 w-2 bg-destructive rounded-full" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[500px]">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <Bell className="h-5 w-5" />
+                      Notifications
+                    </DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 max-h-96 overflow-y-auto">
+                    {notifications.map((notification) => (
+                      <Card key={notification.id} className={`${!notification.read ? 'bg-muted/ ৫০' : ''}`}>
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h4 className="font-medium text-sm">{notification.title}</h4>
+                                <Badge 
+                                  variant={notification.type === 'warning' ? 'destructive' : notification.type === 'success' ? 'default' : 'secondary'} 
+                                  className="text-xs"
+                                >
+                                  {notification.type}
+                                </Badge>
+                              </div>
+                              <p className="text-sm text-muted-foreground mb-2">{notification.message}</p>
+                              <span className="text-xs text-muted-foreground">{notification.time}</span>
+                            </div>
+                            {!notification.read && (
+                              <div className="h-2 w-2 bg-primary rounded-full mt-1" />
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </DialogContent>
+              </Dialog>
 
-        {/* Dashboard Content */}
-        <main className="flex-1 p-6 overflow-y-auto">
-          {/* Welcome Section */}
-          <div className="mb-8">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">Welcome back, {user?.full_name || 'Dr. Smith'}</h2>
-            <p className="text-gray-600">Your central hub for managing your courses and students at GreenTech.</p>
-          </div>
-
-          {/* Quick Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <BookOpen className="h-6 w-6 text-blue-600" />
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Active Courses</p>
-                    <p className="text-2xl font-bold text-gray-900">4</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <div className="p-2 bg-green-100 rounded-lg">
-                    <Users className="h-6 w-6 text-green-600" />
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Total Students</p>
-                    <p className="text-2xl font-bold text-gray-900">120</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <div className="p-2 bg-orange-100 rounded-lg">
-                    <FileText className="h-6 w-6 text-orange-600" />
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Submissions</p>
-                    <p className="text-2xl font-bold text-gray-900">15 Pending</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <div className="p-2 bg-purple-100 rounded-lg">
-                    <MessageSquare className="h-6 w-6 text-purple-600" />
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">New Messages</p>
-                    <p className="text-2xl font-bold text-gray-900">8</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Modules Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
-            {modules.map((module) => {
-              const Icon = module.icon;
-              return (
-                <Card key={module.id} className="hover:shadow-lg transition-shadow cursor-pointer border-l-4 border-l-primary">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className={`p-3 rounded-lg ${module.color}`}>
-                        <Icon className="h-6 w-6 text-white" />
+              {/* --- USER PROFILE MODAL (THIS SECTION IS NOW DYNAMIC) --- */}
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src="/placeholder.svg" />
+                      <AvatarFallback>{getInitials(user?.fac_name)}</AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[600px]">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <User className="h-5 w-5" />
+                      Profile Details
+                    </DialogTitle>
+                  </DialogHeader>
+                  {user && (
+                    <div className="space-y-6">
+                      <div className="flex items-center gap-4">
+                        <Avatar className="h-16 w-16">
+                          <AvatarImage src="/placeholder.svg" />
+                          <AvatarFallback className="text-lg">{getInitials(user.fac_name)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <h3 className="text-lg font-semibold">{user.fac_name}</h3>
+                          <p className="text-muted-foreground">Faculty ID: {user.fac_id}</p>
+                        </div>
                       </div>
-                      <Badge variant="secondary">{module.stats}</Badge>
+                      
+                      <Separator />
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-2">
+                            <Mail className="h-4 w-4 text-muted-foreground" />
+                            <div>
+                              <p className="text-sm font-medium">Email</p>
+                              <p className="text-sm text-muted-foreground">{user.fac_mail}</p>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            <Phone className="h-4 w-4 text-muted-foreground" />
+                            <div>
+                              <p className="text-sm font-medium">Phone</p>
+                              <p className="text-sm text-muted-foreground">+91{staticData.phone}</p>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-2">
+                            <GraduationCap className="h-4 w-4 text-muted-foreground" />
+                            <div>
+                              <p className="text-sm font-medium">Department</p>
+                              <p className="text-sm text-muted-foreground">{staticData.department}</p>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-4 w-4 text-muted-foreground" />
+                            <div>
+                              <p className="text-sm font-medium">Office</p>
+                              <p className="text-sm text-muted-foreground">{staticData.office}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <h3 className="font-semibold text-gray-900 mb-1">{module.title}</h3>
-                    <p className="text-sm text-gray-600 mb-2">{module.description}</p>
-                    <p className="text-xs text-primary font-medium">{module.badge}</p>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+                  )}
+                </DialogContent>
+              </Dialog>
+            </div>
+          </header>
 
-          {/* Recent Activity & Upcoming */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Submissions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-blue-100 rounded-lg">
-                      <FileText className="h-4 w-4 text-blue-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">John Smith</p>
-                      <p className="text-xs text-gray-600">Submitted: Data Structures - Project 2</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-blue-100 rounded-lg">
-                      <FileText className="h-4 w-4 text-blue-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">Jane Doe</p>
-                      <p className="text-xs text-gray-600">Submitted: Operating Systems - Lab 5</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-purple-100 rounded-lg">
-                      <MessageSquare className="h-4 w-4 text-purple-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">New message from Emily</p>
-                      <p className="text-xs text-gray-600">"Question about the final exam"</p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          {/* Dashboard Content */}
+          <main className="flex-1 p-6 overflow-y-auto">
+            <div className="mb-8">
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">Welcome back, {user?.fac_name || 'Faculty Member'}</h2>
+              <p className="text-gray-600">Your central hub for managing your courses and students at GreenTech.</p>
+            </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Your Upcoming Schedule</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium">CS101: Intro to Programming</p>
-                      <p className="text-xs text-gray-600">10:00 AM - 11:30 AM</p>
-                    </div>
-                    <Badge variant="outline">Lecture</Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium">Office Hours</p>
-                      <p className="text-xs text-gray-600">1:00 PM - 3:00 PM</p>
-                    </div>
-                    <Badge variant="outline">Office</Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium">Faculty Meeting</p>
-                      <p className="text-xs text-gray-600">4:00 PM - 5:00 PM</p>
-                    </div>
-                    <Badge variant="outline">Meeting</Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-          
-          {/* Footer */}
-          <footer className="mt-12 pt-6 border-t border-gray-200 text-center text-sm text-gray-500">
-            <p>EduNexus – Built for Greenfield Tech University (GreenTech)</p>
-          </footer>
-        </main>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              {/* ... (Static cards remain the same) ... */}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+              {modules.map((module) => {
+                const Icon = module.icon;
+                return (
+                  <Card key={module.id} className="hover:shadow-lg transition-shadow cursor-pointer border-l-4 border-l-primary">
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className={`p-3 rounded-lg ${module.color}`}>
+                          <Icon className="h-6 w-6 text-white" />
+                        </div>
+                        <Badge variant="secondary">{module.stats}</Badge>
+                      </div>
+                      <h3 className="font-semibold text-gray-900 mb-1">{module.title}</h3>
+                      <p className="text-sm text-gray-600 mb-2">{module.description}</p>
+                      <p className="text-xs text-primary font-medium">{module.badge}</p>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </main>
+        </div>
       </div>
-    </div>
+    </SidebarProvider>
   );
 };
 

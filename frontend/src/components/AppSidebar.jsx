@@ -29,7 +29,7 @@ import {
   MapPin
 } from 'lucide-react';
 
-const modules = [
+const studentModules = [
   {
     id: 'dashboard',
     title: 'Dashboard',
@@ -68,7 +68,7 @@ const modules = [
   }
 ];
 
-export function AppSidebar({ activeModule, onModuleChange }) {
+export function AppSidebar({ activeModule, onModuleChange, modules = studentModules }) {
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
 
