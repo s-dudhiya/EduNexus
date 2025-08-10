@@ -105,10 +105,6 @@ export const AuthForm = () => {
 
         <CardContent>
           <Tabs value="login" className="w-full">
-            <TabsList className="grid w-full grid-cols-1">
-              <TabsTrigger value="login">Login</TabsTrigger>
-            </TabsList>
-
             <TabsContent value="login" className="space-y-4 mt-6">
               <form onSubmit={handleSubmit} className="space-y-4">
                 {errors.api && (

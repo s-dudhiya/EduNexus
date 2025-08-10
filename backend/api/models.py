@@ -66,5 +66,6 @@ class Attendance(models.Model):
     enrollment_no=models.IntegerField()
     semester=models.IntegerField()
     subject_id=models.IntegerField()
+    subject_name=models.CharField(max_length=250)
     total_lectures=models.IntegerField()
     total_attended=models.IntegerField()

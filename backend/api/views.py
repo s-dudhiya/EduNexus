@@ -12,14 +12,15 @@ import subprocess
 import tempfile
 import sys
 import os
-from .models import StudentData, Faculty ,ExamPaper,ExamResult
+from .models import StudentData, Faculty ,ExamPaper,ExamResult,Attendance
 from .serializers import (
     CustomLoginSerializer, 
     UserSerializer, 
     StudentDataSerializer, 
     FacultySerializer,
     ExamPaperSerializer,
-    ExamResultSerializer
+    ExamResultSerializer,
+    AttendanceSerializer
 )
 
 # This is the new, improved view for your custom login logic.
@@ -235,9 +236,6 @@ class RunCodeView(APIView):
 
 
 class SubmitExamView(APIView):
-    """
-    This view receives the calculated exam scores and saves them to the ExamResult table.
-    """
     permission_classes = [IsAuthenticated] # Ensures only logged-in users can submit
 
     def post(self, request, *args, **kwargs):
@@ -248,3 +246,19 @@ class SubmitExamView(APIView):
         
         # If the data is invalid, return the errors
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class AttendanceView(generics.ListAPIView):
+    serializer_class = AttendanceSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        # request.user will be a StudentData or Faculty object because of our custom authentication.
+        user = self.request.user
+        
+        # Ensure the user is a student before trying to fetch attendance.
+        if isinstance(user, StudentData):
+            # Filter the Attendance table to get records for this student's enrollment number.
+            return Attendance.objects.filter(enrollment_no=user.enrollment_no)
+        
+        # If the user is not a student (e.g., a faculty member), return an empty list.
+        return Attendance.objects.none()

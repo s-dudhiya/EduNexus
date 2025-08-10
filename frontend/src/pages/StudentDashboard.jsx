@@ -30,6 +30,8 @@ import { NotesUpload } from '@/components/portal/NotesUpload';
 
 const StudentDashboard = () => {
   const [activeModule, setActiveModule] = useState('dashboard');
+  const { user, logout } = useAuth(); // Get the logged-in user's data
+  const navigate = useNavigate();
 
   const modules = [
     {
@@ -66,21 +68,15 @@ const StudentDashboard = () => {
 
   const ActiveComponent = modules.find(m => m.id === activeModule)?.component || DashboardHome;
 
-  // Mock user data
-  const userData = {
-    name: "John Smith",
-    email: "john.smith@university.edu",
-    studentId: "STU2024001",
-    phone: "+1 (555) 123-4567",
+  // Static data for parts of the UI that are not yet dynamic
+  const staticData = {
     dateOfBirth: "March 15, 1998",
     address: "123 University Ave, Campus City, CC 12345",
-    program: "Computer Science",
-    year: "3rd Year",
     gpa: "3.8",
     enrollmentDate: "September 2021"
   };
 
-  // Mock notifications data
+  // Mock notifications data (can be made dynamic later)
   const notifications = [
     {
       id: 1,
@@ -98,29 +94,16 @@ const StudentDashboard = () => {
       type: "success",
       read: false
     },
-    {
-      id: 3,
-      title: "Library Book Due",
-      message: "Your library book 'Advanced Algorithms' is due in 3 days",
-      time: "2 days ago",
-      type: "info",
-      read: true
-    },
-    {
-      id: 4,
-      title: "Fee Payment Reminder",
-      message: "Tuition fee payment is due next week",
-      time: "3 days ago",
-      type: "warning",
-      read: true
-    }
   ];
-   const { logout } = useAuth();
-  const navigate = useNavigate();
 
   const handleLogout = () => {
     logout();
     navigate('/auth');
+  };
+  
+  // Helper to get initials from name
+  const getInitials = (name = '') => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
 
   return (
@@ -167,10 +150,7 @@ const StudentDashboard = () => {
                               <div className="flex items-center gap-2 mb-1">
                                 <h4 className="font-medium text-sm">{notification.title}</h4>
                                 <Badge 
-                                  variant={
-                                    notification.type === 'warning' ? 'destructive' : 
-                                    notification.type === 'success' ? 'default' : 'secondary'
-                                  } 
+                                  variant={notification.type === 'warning' ? 'destructive' : notification.type === 'success' ? 'default' : 'secondary'} 
                                   className="text-xs"
                                 >
                                   {notification.type}
@@ -190,13 +170,13 @@ const StudentDashboard = () => {
                 </DialogContent>
               </Dialog>
 
-              {/* User Profile Modal */}
+              {/* --- USER PROFILE MODAL (THIS SECTION IS NOW DYNAMIC) --- */}
               <Dialog>
                 <DialogTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full">
                     <Avatar className="h-8 w-8">
                       <AvatarImage src="/placeholder.svg" />
-                      <AvatarFallback>JS</AvatarFallback>
+                      <AvatarFallback>{getInitials(user?.name)}</AvatarFallback>
                     </Avatar>
                   </Button>
                 </DialogTrigger>
@@ -207,94 +187,76 @@ const StudentDashboard = () => {
                       Profile Details
                     </DialogTitle>
                   </DialogHeader>
-                  <div className="space-y-6">
-                    <div className="flex items-center gap-4">
-                      <Avatar className="h-16 w-16">
-                        <AvatarImage src="/placeholder.svg" />
-                        <AvatarFallback className="text-lg">JS</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <h3 className="text-lg font-semibold">{userData.name}</h3>
-                        <p className="text-muted-foreground">{userData.studentId}</p>
-                      </div>
-                    </div>
-                    
-                    <Separator />
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-2">
-                          <Mail className="h-4 w-4 text-muted-foreground" />
-                          <div>
-                            <p className="text-sm font-medium">Email</p>
-                            <p className="text-sm text-muted-foreground">{userData.email}</p>
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center gap-2">
-                          <Phone className="h-4 w-4 text-muted-foreground" />
-                          <div>
-                            <p className="text-sm font-medium">Phone</p>
-                            <p className="text-sm text-muted-foreground">{userData.phone}</p>
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <div>
-                            <p className="text-sm font-medium">Date of Birth</p>
-                            <p className="text-sm text-muted-foreground">{userData.dateOfBirth}</p>
-                          </div>
+                  {user && (
+                    <div className="space-y-6">
+                      <div className="flex items-center gap-4">
+                        <Avatar className="h-16 w-16">
+                          <AvatarImage src="/placeholder.svg" />
+                          <AvatarFallback className="text-lg">{getInitials(user.name)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <h3 className="text-lg font-semibold">{user.name}</h3>
+                          <p className="text-muted-foreground">{user.enrollment_no}</p>
                         </div>
                       </div>
                       
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-2">
-                          <GraduationCap className="h-4 w-4 text-muted-foreground" />
-                          <div>
-                            <p className="text-sm font-medium">Program</p>
-                            <p className="text-sm text-muted-foreground">{userData.program}</p>
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-muted-foreground" />
-                          <div>
-                            <p className="text-sm font-medium">Year</p>
-                            <p className="text-sm text-muted-foreground">{userData.year}</p>
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center gap-2">
-                          <Settings className="h-4 w-4 text-muted-foreground" />
-                          <div>
-                            <p className="text-sm font-medium">GPA</p>
-                            <p className="text-sm text-muted-foreground">{userData.gpa}</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <Separator />
-                    
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <p className="text-sm font-medium">Address</p>
-                          <p className="text-sm text-muted-foreground">{userData.address}</p>
-                        </div>
-                      </div>
+                      <Separator />
                       
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <p className="text-sm font-medium">Enrollment Date</p>
-                          <p className="text-sm text-muted-foreground">{userData.enrollmentDate}</p>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-2">
+                            <Mail className="h-4 w-4 text-muted-foreground" />
+                            <div>
+                              <p className="text-sm font-medium">Email</p>
+                              <p className="text-sm text-muted-foreground">{user.email_id}</p>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            <Phone className="h-4 w-4 text-muted-foreground" />
+                            <div>
+                              <p className="text-sm font-medium">Phone</p>
+                              <p className="text-sm text-muted-foreground">+91 {user.contact_no}</p>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                            <div>
+                              <p className="text-sm font-medium">Date of Birth</p>
+                              <p className="text-sm text-muted-foreground">{staticData.dateOfBirth}</p>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-2">
+                            <GraduationCap className="h-4 w-4 text-muted-foreground" />
+                            <div>
+                              <p className="text-sm font-medium">Program</p>
+                              <p className="text-sm text-muted-foreground">{user.branch}</p>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            <User className="h-4 w-4 text-muted-foreground" />
+                            <div>
+                              <p className="text-sm font-medium">Semester</p>
+                              <p className="text-sm text-muted-foreground">{user.semester}</p>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            <Settings className="h-4 w-4 text-muted-foreground" />
+                            <div>
+                              <p className="text-sm font-medium">GPA</p>
+                              <p className="text-sm text-muted-foreground">{staticData.gpa}</p>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
+                  )}
                 </DialogContent>
               </Dialog>
             </div>

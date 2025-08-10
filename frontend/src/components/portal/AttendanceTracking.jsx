@@ -206,12 +206,18 @@ export function AttendanceTracking({
           {/* Main Content */}
           <div className="lg:col-span-3 space-y-6">
             {/* Statistics Cards */}
-            <div className="grid md:grid-cols-3 gap-4">
+            <div className="grid md:grid-cols-4 gap-4">
               <Card className="shadow-card">
                 <CardContent className="p-4 text-center">
                   <div className="text-2xl font-bold text-primary">{attendancePercentage}%</div>
                   <p className="text-sm text-muted-foreground">Overall</p>
                   <Progress value={attendancePercentage} className="mt-2" />
+                </CardContent>
+              </Card>
+              <Card className="shadow-card">
+                <CardContent className="p-4 text-center">
+                  <div className="text-2xl font-bold">{totalLectures}</div>
+                  <p className="text-sm text-muted-foreground">Total Lectures</p>
                 </CardContent>
               </Card>
               <Card className="shadow-card">

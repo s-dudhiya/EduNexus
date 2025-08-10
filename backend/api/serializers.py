@@ -2,7 +2,7 @@
 
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import StudentData, Faculty, ExamPaper,ExamResult
+from .models import StudentData, Faculty, ExamPaper,ExamResult, Attendance
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -34,3 +34,9 @@ class ExamResultSerializer(serializers.ModelSerializer):
         model = ExamResult
         # These fields match the columns in your api_examresult table
         fields = ['enrollment_no', 'subject_id', 'code_marks', 'mcq_marks', 'test_name']
+        
+class AttendanceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Attendance
+        # This will include all fields from your Attendance model
+        fields = '__all__'
