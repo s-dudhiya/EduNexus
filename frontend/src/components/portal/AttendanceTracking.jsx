@@ -246,7 +246,7 @@ export function AttendanceTracking({
                     return (
                       <div key={index} className="space-y-1">
                         <div className="flex justify-between text-sm">
-                          <span>Subject {item.subject_id}</span>
+                          <span>{item.subject_name}</span>
                           <span className={subjectPercentage < 75 ? 'text-destructive' : 'text-success'}>
                             {subjectPercentage}%
                           </span>
