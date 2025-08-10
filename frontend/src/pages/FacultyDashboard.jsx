@@ -32,16 +32,61 @@ import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 
-const facultyModules = [
-  { id: 'dashboard', title: 'Dashboard', icon: Home },
-  { id: 'profile', title: 'Profile', icon: User },
-  { id: 'courses', title: 'My Courses', icon: BookOpen },
-  { id: 'submissions', title: 'Submissions', icon: ClipboardCheck },
-  { id: 'gradebook', title: 'Gradebook', icon: BarChart3 },
-  { id: 'schedule', title: 'My Schedule', icon: Calendar },
-  { id: 'messages', title: 'Messages', icon: MessageSquare },
-  { id: 'research', title: 'Research', icon: Briefcase },
-  { id: 'settings', title: 'Settings', icon: Settings }
+const modules = [
+  {
+    id: 'dashboard',
+    title: 'Dashboard',
+    description: 'Overview of all activities',
+    icon: Home,
+    color: 'bg-blue-500',
+    stats: '4 Updates',
+    badge: 'Faculty Tool'
+  },
+  {
+    id: 'manage-exams',
+    title: 'Manage Exams',
+    description: 'Create, view, and grade exams',
+    icon: ClipboardCheck,
+    color: 'bg-primary',
+    stats: '2 Active',
+    badge: 'Faculty Tool'
+  },
+  {
+    id: 'mark-attendance',
+    title: 'Mark Attendance',
+    description: 'Mark and track student attendance',
+    icon: Users,
+    color: 'bg-accent',
+    stats: '95% Avg.',
+    badge: 'Faculty Tool'
+  },
+  {
+    id: 'student-chat',
+    title: 'Chat',
+    description: 'Communicate with your students',
+    icon: MessageSquare,
+    color: 'bg-primary-dark',
+    stats: '8 New',
+    badge: 'Faculty Tool'
+  },
+  {
+    id: 'see-results',
+    title: 'See Results',
+    description: 'View and analyze student results',
+    icon: BarChart3,
+    color: 'bg-secondary',
+    stats: '120 Students',
+    badge: 'Faculty Tool'
+  },
+  {
+    id: 'upload-notes',
+    title: 'Upload Notes',
+    description: 'Share notes and materials with students',
+    icon: FileText,
+    color: 'bg-tertiary',
+    stats: '5 Files',
+    badge: 'Faculty Tool'
+  }
 ];
 
 const FacultyDashboard = () => {
@@ -56,7 +101,7 @@ const FacultyDashboard = () => {
 
   // Static data for fields not yet in the database model
   const staticData = {
-    phone: "998877556623",
+    phone: "9988776653",
     office: "Building A, Room 210",
     department: "Computer Science",
   };
@@ -78,63 +123,14 @@ const FacultyDashboard = () => {
       type: "info",
       read: false
     },
-  ];
-
-  const modules = [
     {
-      id: 'course-management',
-      title: 'Course Management',
-      description: 'Manage your courses and materials',
-      icon: BookOpen,
-      color: 'bg-primary',
-      stats: '4 Courses',
-      badge: 'Faculty Tool'
+      id: 3,
+      title: "Question from a student",
+      message: "Emily asked a question about the upcoming exam.",
+      time: "3 hours ago",
+      type: "warning",
+      read: true
     },
-    {
-      id: 'student-grades',
-      title: 'Gradebook',
-      description: 'Enter and manage student grades',
-      icon: BarChart3,
-      color: 'bg-secondary',
-      stats: '120 Students',
-      badge: 'Faculty Tool'
-    },
-    {
-      id: 'assignments',
-      title: 'Assignment Review',
-      description: 'Review and grade submissions',
-      icon: FileText,
-      color: 'bg-tertiary',
-      stats: '15 Pending',
-      badge: 'Faculty Tool'
-    },
-    {
-      id: 'student-chat',
-      title: 'Student Chat',
-      description: 'Communicate with your students',
-      icon: MessageSquare,
-      color: 'bg-primary-dark',
-      stats: '8 New',
-      badge: 'Faculty Tool'
-    },
-    {
-      id: 'attendance',
-      title: 'Attendance',
-      description: 'Mark and track student attendance',
-      icon: Users,
-      color: 'bg-accent',
-      stats: '95% Avg.',
-      badge: 'Faculty Tool'
-    },
-    {
-      id: 'research',
-      title: 'Research Portal',
-      description: 'Manage research grants and papers',
-      icon: Briefcase,
-      color: 'bg-secondary-dark',
-      stats: '2 Active',
-      badge: 'Faculty Tool'
-    }
   ];
   
   const getInitials = (name = '') => {
@@ -147,7 +143,7 @@ const FacultyDashboard = () => {
         <AppSidebar 
           activeModule={activeModule} 
           onModuleChange={setActiveModule}
-          modules={facultyModules}
+          modules={modules}
         />
         
         <div className="flex-1 flex flex-col">
@@ -157,7 +153,7 @@ const FacultyDashboard = () => {
             
             <div className="flex items-center flex-1">
               <h1 className="text-xl font-semibold text-foreground">
-                {facultyModules.find(m => m.id === activeModule)?.title || 'Faculty Dashboard'}
+                {modules.find(m => m.id === activeModule)?.title || 'Faculty Dashboard'}
               </h1>
             </div>
             
@@ -179,7 +175,7 @@ const FacultyDashboard = () => {
                   </DialogHeader>
                   <div className="space-y-4 max-h-96 overflow-y-auto">
                     {notifications.map((notification) => (
-                      <Card key={notification.id} className={`${!notification.read ? 'bg-muted/ ৫০' : ''}`}>
+                      <Card key={notification.id} className={`${!notification.read ? 'bg-muted/50' : ''}`}>
                         <CardContent className="p-4">
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
@@ -252,7 +248,7 @@ const FacultyDashboard = () => {
                             <Phone className="h-4 w-4 text-muted-foreground" />
                             <div>
                               <p className="text-sm font-medium">Phone</p>
-                              <p className="text-sm text-muted-foreground">+91{staticData.phone}</p>
+                              <p className="text-sm text-muted-foreground">+91 {staticData.phone}</p>
                             </div>
                           </div>
                         </div>
@@ -312,6 +308,10 @@ const FacultyDashboard = () => {
                   </Card>
                 );
               })}
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* ... (Static cards remain the same) ... */}
             </div>
           </main>
         </div>
