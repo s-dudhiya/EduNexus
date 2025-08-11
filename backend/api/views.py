@@ -13,8 +13,8 @@ import tempfile
 import sys
 import os
 # --- ADDED IMPORTS FOR THE NEW VIEW ---
-from django.db.models import Sum, F, Window
-from django.db.models.functions import Rank
+from django.db.models import Sum, F, Window,Value
+from django.db.models.functions import Rank, Coalesce
 from .models import StudentData, Faculty ,ExamPaper,ExamResult,Attendance, CurrentSemMarks,SubjectDetails
 # ------------------------------------
 from .serializers import (
@@ -282,25 +282,43 @@ class StudentDashboardSummaryView(APIView):
 
         department_rank = None
         
-        # --- Safely Calculate Department Rank ---
-        students_in_semester = StudentData.objects.filter(
-            semester=student.semester, branch=student.branch
-        )
-        
-        marks_query = CurrentSemMarks.objects.filter(
-            enrollment_number__in=students_in_semester
-        ).values('enrollment_number').annotate(
-            total_marks=Sum(F('t1_marks') + F('t2_marks') + F('t3_marks'))
-        ).order_by('-total_marks')
+        # --- FINAL RANK CALCULATION (Ranks against all students in the semester) ---
+        try:
+            # 1. Get all students in the same SEMESTER (ignoring branch)
+            students_in_semester = StudentData.objects.filter(
+                semester=student.semester
+            )
 
-        ranked_list = list(marks_query)
+            # 2. Get all marks for those students
+            marks_data = CurrentSemMarks.objects.filter(
+                enrollment_number__in=students_in_semester.values_list('enrollment_no', flat=True)
+            )
 
-        for i, item in enumerate(ranked_list):
-            if item['enrollment_number'] == student.enrollment_no:
-                department_rank = i + 1
-                break
+            # 3. Calculate total marks for each student, initializing all with 0
+            student_totals = {s.enrollment_no: 0 for s in students_in_semester}
+            for mark in marks_data:
+                total = mark.t1_marks + mark.t2_marks + mark.t3_marks
+                student_totals[mark.enrollment_number] = student_totals.get(mark.enrollment_number, 0) + total
 
-        # --- Calculate Overall Attendance ---
+            # 4. Create a sorted list of all students in the semester by their total marks
+            sorted_students = sorted(student_totals.items(), key=lambda item: item[1], reverse=True)
+
+            # 5. Determine the rank, handling ties correctly
+            rank_map = {}
+            current_rank = 0
+            last_score = -1
+            for i, (enroll_no, total) in enumerate(sorted_students):
+                if total != last_score:
+                    current_rank = i + 1
+                rank_map[enroll_no] = current_rank
+                last_score = total
+            
+            department_rank = rank_map.get(student.enrollment_no)
+
+        except Exception as e:
+            print(f"Could not calculate rank for student {enrollment_no}: {e}")
+
+        # --- Calculate Overall Attendance (no changes here) ---
         attendance_agg = Attendance.objects.filter(
             enrollment_no=student.enrollment_no
         ).aggregate(
@@ -312,10 +330,10 @@ class StudentDashboardSummaryView(APIView):
         if attendance_agg.get('total_lectures') and attendance_agg['total_lectures'] > 0:
             overall_attendance = round((attendance_agg['total_attended'] / attendance_agg['total_lectures']) * 100)
 
-        # --- Get Current Semester Subjects ---
+        # --- Get Current Semester Subjects (no changes here) ---
         current_subjects = SubjectDetails.objects.filter(sem=student.semester).values('subject_name', 'subject_id')
 
-        # --- Get Subjects with Low Attendance ---
+        # --- Get Subjects with Low Attendance (no changes here) ---
         student_attendance_records = Attendance.objects.filter(enrollment_no=student.enrollment_no)
         low_attendance_subjects = []
         for record in student_attendance_records:
@@ -330,7 +348,7 @@ class StudentDashboardSummaryView(APIView):
         # --- Prepare the final data payload ---
         data = {
             "department_rank": department_rank,
-            "overall_attendance": overall_attendance, # <-- FIX: This is now dynamic
+            "overall_attendance": overall_attendance,
             "current_subjects": list(current_subjects), 
             "low_attendance_subjects": low_attendance_subjects,
             "pending_assignments": 3, # Static for now

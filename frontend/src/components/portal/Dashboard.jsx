@@ -65,7 +65,7 @@ const DashboardHome = () => {
       iconColor: "text-blue-600"
     },
     {
-      title: "Department Rank",
+      title: "Current Rank",
       value: dashboardData?.department_rank ? `#${dashboardData.department_rank}` : "N/A",
       icon: Award,
       color: "bg-green-100",
