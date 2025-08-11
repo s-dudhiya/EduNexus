@@ -12,7 +12,11 @@ import subprocess
 import tempfile
 import sys
 import os
-from .models import StudentData, Faculty ,ExamPaper,ExamResult,Attendance
+# --- ADDED IMPORTS FOR THE NEW VIEW ---
+from django.db.models import Sum, F, Window
+from django.db.models.functions import Rank
+from .models import StudentData, Faculty ,ExamPaper,ExamResult,Attendance, CurrentSemMarks,SubjectDetails
+# ------------------------------------
 from .serializers import (
     CustomLoginSerializer, 
     UserSerializer, 
@@ -236,6 +240,9 @@ class RunCodeView(APIView):
 
 
 class SubmitExamView(APIView):
+    """
+    This view receives the calculated exam scores and saves them to the ExamResult table.
+    """
     permission_classes = [IsAuthenticated] # Ensures only logged-in users can submit
 
     def post(self, request, *args, **kwargs):
@@ -262,3 +269,72 @@ class AttendanceView(generics.ListAPIView):
         
         # If the user is not a student (e.g., a faculty member), return an empty list.
         return Attendance.objects.none()
+
+# --- ADDED THIS NEW VIEW AT THE BOTTOM OF THE FILE ---
+class StudentDashboardSummaryView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, enrollment_no, *args, **kwargs):
+        try:
+            student = StudentData.objects.get(enrollment_no=enrollment_no)
+        except StudentData.DoesNotExist:
+            return Response({"error": "Student not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        department_rank = None
+        
+        # --- Safely Calculate Department Rank ---
+        students_in_semester = StudentData.objects.filter(
+            semester=student.semester, branch=student.branch
+        )
+        
+        marks_query = CurrentSemMarks.objects.filter(
+            enrollment_number__in=students_in_semester
+        ).values('enrollment_number').annotate(
+            total_marks=Sum(F('t1_marks') + F('t2_marks') + F('t3_marks'))
+        ).order_by('-total_marks')
+
+        ranked_list = list(marks_query)
+
+        for i, item in enumerate(ranked_list):
+            if item['enrollment_number'] == student.enrollment_no:
+                department_rank = i + 1
+                break
+
+        # --- Calculate Overall Attendance ---
+        attendance_agg = Attendance.objects.filter(
+            enrollment_no=student.enrollment_no
+        ).aggregate(
+            total_attended=Sum('total_attended'),
+            total_lectures=Sum('total_lectures')
+        )
+        
+        overall_attendance = 0
+        if attendance_agg.get('total_lectures') and attendance_agg['total_lectures'] > 0:
+            overall_attendance = round((attendance_agg['total_attended'] / attendance_agg['total_lectures']) * 100)
+
+        # --- Get Current Semester Subjects ---
+        current_subjects = SubjectDetails.objects.filter(sem=student.semester).values('subject_name', 'subject_id')
+
+        # --- Get Subjects with Low Attendance ---
+        student_attendance_records = Attendance.objects.filter(enrollment_no=student.enrollment_no)
+        low_attendance_subjects = []
+        for record in student_attendance_records:
+            if record.total_lectures > 0:
+                percentage = (record.total_attended / record.total_lectures) * 100
+                if percentage < 75:
+                    low_attendance_subjects.append({
+                        "name": record.subject_name,
+                        "percentage": round(percentage)
+                    })
+
+        # --- Prepare the final data payload ---
+        data = {
+            "department_rank": department_rank,
+            "overall_attendance": overall_attendance, # <-- FIX: This is now dynamic
+            "current_subjects": list(current_subjects), 
+            "low_attendance_subjects": low_attendance_subjects,
+            "pending_assignments": 3, # Static for now
+            "upcoming_exams": 2, # Static for now
+        }
+        
+        return Response(data)
