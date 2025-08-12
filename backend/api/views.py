@@ -15,7 +15,7 @@ import os
 # --- ADDED IMPORTS FOR THE NEW VIEW ---
 from django.db.models import Sum, F, Window,Value
 from django.db.models.functions import Rank, Coalesce
-from .models import StudentData, Faculty ,ExamPaper,ExamResult,Attendance, CurrentSemMarks,SubjectDetails
+from .models import StudentData, Faculty ,ExamPaper,ExamResult,Attendance, CurrentSemMarks,SubjectDetails, PastMarks, PracticalMarks, SubjectDetails
 # ------------------------------------
 from .serializers import (
     CustomLoginSerializer, 
@@ -24,7 +24,11 @@ from .serializers import (
     FacultySerializer,
     ExamPaperSerializer,
     ExamResultSerializer,
-    AttendanceSerializer
+    AttendanceSerializer,
+    CurrentSemMarksSerializer,
+    PastMarksSerializer,
+    PracticalMarksSerializer,
+    SubjectDetailsSerializer
 )
 
 # This is the new, improved view for your custom login logic.
@@ -355,4 +359,41 @@ class StudentDashboardSummaryView(APIView):
             "upcoming_exams": 2, # Static for now
         }
         
+        return Response(data)
+
+class StudentResultsView(APIView):
+    """
+    This view gathers all marks (current, past, practical) and a list of all subjects
+    for the authenticated student and returns them in a single response.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        user = self.request.user
+
+        if not isinstance(user, StudentData):
+            return Response({"error": "User is not a student."}, status=status.HTTP_403_FORBIDDEN)
+
+        # Fetch all three types of marks
+        current_marks = CurrentSemMarks.objects.filter(enrollment_number=user.enrollment_no)
+        past_marks = PastMarks.objects.filter(enrollment_no=user.enrollment_no)
+        practical_marks = PracticalMarks.objects.filter(enrollment_no=user.enrollment_no)
+        
+        # --- FIX: Fetch all subjects ---
+        all_subjects = SubjectDetails.objects.all()
+
+        # Serialize the data
+        current_marks_data = CurrentSemMarksSerializer(current_marks, many=True).data
+        past_marks_data = PastMarksSerializer(past_marks, many=True).data
+        practical_marks_data = PracticalMarksSerializer(practical_marks, many=True).data
+        subjects_data = SubjectDetailsSerializer(all_subjects, many=True).data
+
+        # Combine into a single response object
+        data = {
+            "current_marks": current_marks_data,
+            "past_marks": past_marks_data,
+            "practical_marks": practical_marks_data,
+            "subjects": subjects_data # <-- Add the subjects list to the response
+        }
+
         return Response(data)

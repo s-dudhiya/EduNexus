@@ -2,7 +2,7 @@
 
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import StudentData, Faculty, ExamPaper,ExamResult, Attendance
+from .models import StudentData, Faculty, ExamPaper,ExamResult, Attendance, CurrentSemMarks, PastMarks, PracticalMarks ,SubjectDetails
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -39,4 +39,24 @@ class AttendanceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Attendance
         # This will include all fields from your Attendance model
+        fields = '__all__'
+
+class CurrentSemMarksSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CurrentSemMarks
+        fields = '__all__'
+
+class PastMarksSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PastMarks
+        fields = '__all__'
+
+class PracticalMarksSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PracticalMarks
+        fields = '__all__'
+
+class SubjectDetailsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SubjectDetails
         fields = '__all__'
