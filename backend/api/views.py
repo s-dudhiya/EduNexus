@@ -12,10 +12,12 @@ import subprocess
 import tempfile
 import sys
 import os
+from django.http import HttpResponse
 # --- ADDED IMPORTS FOR THE NEW VIEW ---
 from django.db.models import Sum, F, Window,Value
 from django.db.models.functions import Rank, Coalesce
-from .models import StudentData, Faculty ,ExamPaper,ExamResult,Attendance, CurrentSemMarks,SubjectDetails, PastMarks, PracticalMarks, SubjectDetails
+from .models import( StudentData, Faculty ,ExamPaper,ExamResult,Attendance, 
+                    CurrentSemMarks,SubjectDetails, PastMarks, PracticalMarks, SubjectDetails, Notes)
 # ------------------------------------
 from .serializers import (
     CustomLoginSerializer, 
@@ -28,7 +30,9 @@ from .serializers import (
     CurrentSemMarksSerializer,
     PastMarksSerializer,
     PracticalMarksSerializer,
-    SubjectDetailsSerializer
+    SubjectDetailsSerializer,
+    NotesListSerializer,
+    NotesUploadSerializer
 )
 
 # This is the new, improved view for your custom login logic.
@@ -397,3 +401,69 @@ class StudentResultsView(APIView):
         }
 
         return Response(data)
+
+class NotesView(APIView):
+    """
+    This view handles listing notes for students (GET) and uploading notes for faculty (POST).
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        user = self.request.user
+
+        # Only students can view notes this way.
+        if not isinstance(user, StudentData):
+            return Response([], status=status.HTTP_200_OK)
+
+        # 1. Find the subjects for the student's current semester.
+        student_semester = user.semester
+        relevant_subjects = SubjectDetails.objects.filter(sem=student_semester).values_list('subject_name', flat=True)
+
+        # 2. Filter the notes to only include those subjects.
+        notes = Notes.objects.filter(subject_name__in=list(relevant_subjects))
+        
+        serializer = NotesListSerializer(notes, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, *args, **kwargs):
+        user = self.request.user
+
+        # Only faculty can upload notes.
+        if not isinstance(user, Faculty):
+            return Response({"error": "Only faculty can upload notes."}, status=status.HTTP_403_FORBIDDEN)
+
+        # We need to handle the file data manually for BinaryField.
+        file_obj = request.FILES.get('doc')
+        if not file_obj:
+            return Response({"error": "No document provided."}, status=status.HTTP_400_BAD_REQUEST)
+
+        data = {
+            "uploader_id": user.fac_id,
+            "uploader_name": user.fac_name,
+            "subject_name": request.data.get('subject_name'),
+            "desc": request.data.get('desc'),
+            "doc": file_obj.read() # Read the file content into binary
+        }
+        
+        serializer = NotesUploadSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class NoteDownloadView(APIView):
+    """
+    This view handles downloading a specific note document.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk, *args, **kwargs):
+        try:
+            note = Notes.objects.get(pk=pk)
+            # Create an HTTP response with the binary data and appropriate headers.
+            response = HttpResponse(note.doc, content_type='application/octet-stream')
+            response['Content-Disposition'] = f'attachment; filename="{note.subject_name}_notes.pdf"' # Assuming PDF, can be made dynamic
+            return response
+        except Notes.DoesNotExist:
+            return Response({"error": "Note not found."}, status=status.HTTP_404_NOT_FOUND)
