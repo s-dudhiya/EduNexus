@@ -29,6 +29,7 @@ class Faculty(models.Model):
     fac_id = models.IntegerField(primary_key=True)
     fac_name = models.CharField(max_length=250)
     fac_mail = models.CharField(max_length=500)
+    sem=models.IntegerField()
     pin = models.IntegerField()
 
 class PastMarks(models.Model):
@@ -69,3 +70,13 @@ class Attendance(models.Model):
     subject_name=models.CharField(max_length=250)
     total_lectures=models.IntegerField()
     total_attended=models.IntegerField()
+    attd_date=models.DateField(auto_now=True)
+    
+class Notes(models.Model):
+    id = models.AutoField(primary_key=True)
+    uploader_id=models.IntegerField()
+    uploader_name=models.CharField(max_length=250)
+    subject_name=models.CharField(max_length=250)
+    desc=models.CharField(max_length=250)
+    doc=models.BinaryField()
+    upload_date=models.DateField(auto_now=True)
