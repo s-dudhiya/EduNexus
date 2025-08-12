@@ -79,4 +79,5 @@ class Notes(models.Model):
     subject_name=models.CharField(max_length=250)
     desc=models.CharField(max_length=250)
     doc=models.BinaryField()
+    sem=models.IntegerField()
     upload_date=models.DateField(auto_now=True)
