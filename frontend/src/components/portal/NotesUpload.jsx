@@ -237,7 +237,7 @@ export function NotesUpload({
                       </div>
                     </div>
                     <Button variant="ghost" size="sm">
-                      <MoreVertical className="h-4 w-4" />
+                      {/* <MoreVertical className="h-4 w-4" /> */}
                     </Button>
                   </div>
 
