@@ -421,6 +421,15 @@ export function ResultViewing({ enrollmentNo = 12345 }) {
           </CardHeader>
         </Card>
 
+        <Card className="shadow-card">
+          <CardHeader className="bg-gradient-primary text-primary-foreground rounded-t-lg">
+            <CardTitle className="text-2xl flex items-center gap-2">
+              <Award className="h-6 w-6" />
+              Academic Results & Progress
+            </CardTitle>
+          </CardHeader>
+        </Card>
+
         <div className="grid md:grid-cols-2 gap-4">
           <Card className="shadow-card">
             <CardContent className="p-4 text-center">
