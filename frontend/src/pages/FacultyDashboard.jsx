@@ -31,68 +31,64 @@ import { AppSidebar } from '@/components/AppSidebar';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
-
-const modules = [
-  {
-    id: 'dashboard',
-    title: 'Dashboard',
-    description: 'Overview of all activities',
-    icon: Home,
-    color: 'bg-blue-500',
-    stats: '4 Updates',
-    badge: 'Faculty Tool'
-  },
-  {
-    id: 'manage-exams',
-    title: 'Manage Exams',
-    description: 'Create, view, and grade exams',
-    icon: ClipboardCheck,
-    color: 'bg-primary',
-    stats: '2 Active',
-    badge: 'Faculty Tool'
-  },
-  {
-    id: 'mark-attendance',
-    title: 'Mark Attendance',
-    description: 'Mark and track student attendance',
-    icon: Users,
-    color: 'bg-accent',
-    stats: '95% Avg.',
-    badge: 'Faculty Tool'
-  },
-  {
-    id: 'student-chat',
-    title: 'Chat',
-    description: 'Communicate with your students',
-    icon: MessageSquare,
-    color: 'bg-primary-dark',
-    stats: '8 New',
-    badge: 'Faculty Tool'
-  },
-  {
-    id: 'see-results',
-    title: 'See Results',
-    description: 'View and analyze student results',
-    icon: BarChart3,
-    color: 'bg-secondary',
-    stats: '120 Students',
-    badge: 'Faculty Tool'
-  },
-  {
-    id: 'upload-notes',
-    title: 'Upload Notes',
-    description: 'Share notes and materials with students',
-    icon: FileText,
-    color: 'bg-tertiary',
-    stats: '5 Files',
-    badge: 'Faculty Tool'
-  }
-];
+import Dashboard from '@/components/portal-faculty/Dashboard';
+import ManageExams from '@/components/portal-faculty/ManageExams';
+import MarkAttendance from '@/components/portal-faculty/MarkAttendance';
+import FacultyChat from '@/components/portal-faculty/FacultyChat';
+import ViewResults from '@/components/portal-faculty/ViewResults';
+import UploadNotes from '@/components/portal-faculty/UploadNotes';
 
 const FacultyDashboard = () => {
   const [activeModule, setActiveModule] = useState('dashboard');
   const { logout, user } = useAuth();
   const navigate = useNavigate();
+
+  const modules = [
+    {
+      id: 'dashboard',
+      title: 'Dashboard',
+      description: 'Overview of all activities',
+      icon: Home,
+      component: Dashboard,
+    },
+    {
+      id: 'manage-exams',
+      title: 'Manage Exams',
+      description: 'Create, view, and grade exams',
+      icon: ClipboardCheck,
+      component: ManageExams,
+    },
+    {
+      id: 'mark-attendance',
+      title: 'Mark Attendance',
+      description: 'Mark and track student attendance',
+      icon: Users,
+      component: MarkAttendance,
+    },
+    {
+      id: 'student-chat',
+      title: 'Chat',
+      description: 'Communicate with your students',
+      icon: MessageSquare,
+      component: FacultyChat,
+    },
+    {
+      id: 'see-results',
+      title: 'See Results',
+      description: 'View and analyze student results',
+      icon: BarChart3,
+      component: ViewResults,
+    },
+    {
+      id: 'upload-notes',
+      title: 'Upload Notes',
+      description: 'Share notes and materials with students',
+      icon: FileText,
+      component: UploadNotes,
+    }
+  ];
+
+  const ActiveComponent = modules.find(m => m.id === activeModule)?.component || Dashboard;
 
   const handleLogout = () => {
     logout();
@@ -280,39 +276,7 @@ const FacultyDashboard = () => {
 
           {/* Dashboard Content */}
           <main className="flex-1 p-6 overflow-y-auto">
-            <div className="mb-8">
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">Welcome back, {user?.fac_name || 'Faculty Member'}</h2>
-              <p className="text-gray-600">Your central hub for managing your courses and students at GreenTech.</p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              {/* ... (Static cards remain the same) ... */}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
-              {modules.map((module) => {
-                const Icon = module.icon;
-                return (
-                  <Card key={module.id} className="hover:shadow-lg transition-shadow cursor-pointer border-l-4 border-l-primary">
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <div className={`p-3 rounded-lg ${module.color}`}>
-                          <Icon className="h-6 w-6 text-white" />
-                        </div>
-                        <Badge variant="secondary">{module.stats}</Badge>
-                      </div>
-                      <h3 className="font-semibold text-gray-900 mb-1">{module.title}</h3>
-                      <p className="text-sm text-gray-600 mb-2">{module.description}</p>
-                      <p className="text-xs text-primary font-medium">{module.badge}</p>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* ... (Static cards remain the same) ... */}
-            </div>
+            <ActiveComponent />
           </main>
         </div>
       </div>
