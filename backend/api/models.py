@@ -12,6 +12,7 @@ class CurrentSemMarks(models.Model):
 class ExamPaper(models.Model):
     id = models.AutoField(primary_key=True)
     subject_id = models.IntegerField()
+    sem=models.IntegerField()
     code_question = models.CharField(max_length=5600)
     test_output_1 = models.CharField(max_length=2500)
     test_output_2 = models.JSONField()
