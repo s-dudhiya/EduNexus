@@ -179,220 +179,223 @@ export default function MarkAttendance() {
   const isFormComplete = students && Object.keys(attendanceData).length === students.length;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-2">
-        <UserCheck className="h-5 w-5" />
-        <h1 className="text-2xl font-bold">Mark Attendance</h1>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-background to-muted p-4">
+        <div className="max-w-7xl mx-auto space-y-6">
+            <Card className="shadow-card">
+                <CardHeader className="bg-gradient-primary text-primary-foreground rounded-t-lg">
+                    <CardTitle className="text-2xl flex items-center gap-2">
+                        <UserCheck className="h-6 w-6" />
+                        Attendance Tracking
+                    </CardTitle>
+                </CardHeader>
+            </Card>
 
-      {/* Selection Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            Select Batch, Course and Date
-          </CardTitle>
-          <CardDescription>Choose the batch, course and date for which you want to mark attendance</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-3">
-            <Controller
-              name="batchId"
-              control={control}
-              render={({ field }) => (
-                <Select 
-                  value={selectedBatch} 
-                  onValueChange={(value) => {
-                    setSelectedBatch(value);
-                    field.onChange(value);
-                    setValue("attendance", {});
-                  }}
-                  disabled={batchesLoading}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select a batch" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {batches?.map((batch) => (
-                      <SelectItem key={batch.id} value={batch.id}>
-                        {batch.name} ({batch.students} students)
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
-            <Controller
-              name="courseId"
-              control={control}
-              render={({ field }) => (
-                <Select 
-                  value={selectedCourse} 
-                  onValueChange={(value) => {
-                    setSelectedCourse(value);
-                    field.onChange(value);
-                    setValue("attendance", {});
-                  }}
-                  disabled={coursesLoading}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select a course" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {courses?.map((course) => (
-                      <SelectItem key={course.id} value={course.id}>
-                        {course.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
-            <Controller
-              name="date"
-              control={control}
-              render={({ field }) => (
-                <Input type="date" {...field} />
-              )}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Attendance Form */}
-      {selectedBatch && selectedCourse && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
+            <Card className="shadow-card">
+                <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Student Attendance
+                    <Calendar className="h-5 w-5" />
+                    Select Batch, Course and Date
                 </CardTitle>
-                <CardDescription>Mark attendance for each student</CardDescription>
-              </div>
-              <div className="flex gap-2">
-                <Button type="button" variant="outline" size="sm" onClick={markAllPresent}>
-                  Mark All Present
-                </Button>
-                <Button type="button" variant="outline" size="sm" onClick={markAllAbsent}>
-                  Mark All Absent
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {studentsLoading ? (
-              <div className="space-y-4">
-                {[...Array(4)].map((_, i) => (
-                  <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <Skeleton className="h-10 w-10 rounded-full" />
-                      <div>
-                        <Skeleton className="h-4 w-24 mb-1" />
-                        <Skeleton className="h-3 w-16" />
-                      </div>
-                    </div>
-                    <Skeleton className="h-9 w-24" />
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <>
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Student</TableHead>
-                        <TableHead>Roll Number</TableHead>
-                        <TableHead>Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {students?.map((student) => (
-                        <TableRow key={student.id}>
-                          <TableCell>
-                            <div className="flex items-center gap-3">
-                              <img 
-                                src={student.avatar} 
-                                alt={student.name}
-                                className="h-8 w-8 rounded-full"
-                              />
-                              <span className="font-medium">{student.name}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell>{student.rollNumber}</TableCell>
-                          <TableCell>
-                            <Controller
-                              name={`attendance.${student.id}`}
-                              control={control}
-                              render={({ field }) => (
-                                <div className="flex gap-2">
-                                  <Button
-                                    type="button"
-                                    variant={field.value === "present" ? "default" : "outline"}
-                                    onClick={() => field.onChange("present")}
-                                  >
-                                    Present
-                                  </Button>
-                                  <Button
-                                    type="button"
-                                    variant={field.value === "absent" ? "destructive" : "outline"}
-                                    onClick={() => field.onChange("absent")}
-                                  >
-                                    Absent
-                                  </Button>
-                                </div>
-                              )}
-                            />
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                <CardDescription>Choose the Branch, course and date for which you want to mark attendance</CardDescription>
+                </CardHeader>
+                <CardContent>
+                <div className="grid gap-4 md:grid-cols-3">
+                    <Controller
+                    name="batchId"
+                    control={control}
+                    render={({ field }) => (
+                        <Select 
+                        value={selectedBatch} 
+                        onValueChange={(value) => {
+                            setSelectedBatch(value);
+                            field.onChange(value);
+                            setValue("attendance", {});
+                        }}
+                        disabled={batchesLoading}
+                        >
+                        <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select a batch" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {batches?.map((batch) => (
+                            <SelectItem key={batch.id} value={batch.id}>
+                                {batch.name} ({batch.students} students)
+                            </SelectItem>
+                            ))}
+                        </SelectContent>
+                        </Select>
+                    )}
+                    />
+                    <Controller
+                    name="courseId"
+                    control={control}
+                    render={({ field }) => (
+                        <Select 
+                        value={selectedCourse} 
+                        onValueChange={(value) => {
+                            setSelectedCourse(value);
+                            field.onChange(value);
+                            setValue("attendance", {});
+                        }}
+                        disabled={coursesLoading}
+                        >
+                        <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select a course" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {courses?.map((course) => (
+                            <SelectItem key={course.id} value={course.id}>
+                                {course.name}
+                            </SelectItem>
+                            ))}
+                        </SelectContent>
+                        </Select>
+                    )}
+                    />
+                    <Controller
+                    name="date"
+                    control={control}
+                    render={({ field }) => (
+                        <Input type="date" {...field} />
+                    )}
+                    />
+                </div>
+                </CardContent>
+            </Card>
 
-                  {/* Stats and Submit */}
-                  <div className="flex items-center justify-between pt-4 border-t">
-                    <div className="flex gap-4">
-                      <Badge variant="default">Present: {stats.present}</Badge>
-                      <Badge variant="destructive">Absent: {stats.absent}</Badge>
-                      <Badge variant="outline">Total: {stats.total}</Badge>
+            {selectedBatch && selectedCourse && (
+                <Card className="shadow-card">
+                <CardHeader>
+                    <div className="flex items-center justify-between">
+                    <div>
+                        <CardTitle className="flex items-center gap-2">
+                        <Users className="h-5 w-5" />
+                        Student Attendance
+                        </CardTitle>
+                        <CardDescription>Mark attendance for each student</CardDescription>
                     </div>
-                    <Button 
-                      type="button" 
-                      disabled={!isFormComplete || attendanceMutation.isPending}
-                      onClick={() => setIsConfirmOpen(true)}
-                      className="gap-2"
-                    >
-                      <Save className="h-4 w-4" />
-                      Submit Attendance
-                    </Button>
-                  </div>
-                </form>
-                <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Confirm Submission</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Are you sure you want to submit the attendance? This action cannot be undone.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction 
-                        onClick={handleSubmit(onSubmit)} 
-                        disabled={attendanceMutation.isPending}
-                      >
-                        {attendanceMutation.isPending ? "Saving..." : "Confirm"}
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </>
+                    <div className="flex gap-2">
+                        <Button type="button" variant="outline" size="sm" onClick={markAllPresent}>
+                        Mark All Present
+                        </Button>
+                        <Button type="button" variant="outline" size="sm" onClick={markAllAbsent}>
+                        Mark All Absent
+                        </Button>
+                    </div>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    {studentsLoading ? (
+                    <div className="space-y-4">
+                        {[...Array(4)].map((_, i) => (
+                        <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
+                            <div className="flex items-center gap-3">
+                            <Skeleton className="h-10 w-10 rounded-full" />
+                            <div>
+                                <Skeleton className="h-4 w-24 mb-1" />
+                                <Skeleton className="h-3 w-16" />
+                            </div>
+                            </div>
+                            <Skeleton className="h-9 w-24" />
+                        </div>
+                        ))}
+                    </div>
+                    ) : (
+                    <>
+                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                        <Table>
+                            <TableHeader>
+                            <TableRow>
+                                <TableHead>Student</TableHead>
+                                <TableHead>Roll Number</TableHead>
+                                <TableHead>Status</TableHead>
+                            </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                            {students?.map((student) => (
+                                <TableRow key={student.id}>
+                                <TableCell>
+                                    <div className="flex items-center gap-3">
+                                    <img 
+                                        src={student.avatar} 
+                                        alt={student.name}
+                                        className="h-8 w-8 rounded-full"
+                                    />
+                                    <span className="font-medium">{student.name}</span>
+                                    </div>
+                                </TableCell>
+                                <TableCell>{student.rollNumber}</TableCell>
+                                <TableCell>
+                                    <Controller
+                                    name={`attendance.${student.id}`}
+                                    control={control}
+                                    render={({ field }) => (
+                                        <div className="flex gap-2">
+                                        <Button
+                                            type="button"
+                                            variant={field.value === "present" ? "default" : "outline"}
+                                            onClick={() => field.onChange("present")}
+                                        >
+                                            Present
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            variant={field.value === "absent" ? "destructive" : "outline"}
+                                            onClick={() => field.onChange("absent")}
+                                        >
+                                            Absent
+                                        </Button>
+                                        </div>
+                                    )}
+                                    />
+                                </TableCell>
+                                </TableRow>
+                            ))}
+                            </TableBody>
+                        </Table>
+
+                        <div className="flex items-center justify-between pt-4 border-t">
+                            <div className="flex gap-4">
+                            <Badge variant="default">Present: {stats.present}</Badge>
+                            <Badge variant="destructive">Absent: {stats.absent}</Badge>
+                            <Badge variant="outline">Total: {stats.total}</Badge>
+                            </div>
+                            <Button 
+                            type="button" 
+                            disabled={!isFormComplete || attendanceMutation.isPending}
+                            onClick={() => setIsConfirmOpen(true)}
+                            className="gap-2"
+                            >
+                            <Save className="h-4 w-4" />
+                            Submit Attendance
+                            </Button>
+                        </div>
+                        </form>
+                        <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                            <AlertDialogTitle>Confirm Submission</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Are you sure you want to submit the attendance? This action cannot be undone.
+                            </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction 
+                                onClick={handleSubmit(onSubmit)} 
+                                disabled={attendanceMutation.isPending}
+                            >
+                                {attendanceMutation.isPending ? "Saving..." : "Confirm"}
+                            </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                        </AlertDialog>
+                    </>
+                    )}
+                </CardContent>
+                </Card>
             )}
-          </CardContent>
-        </Card>
-      )}
+        </div>
     </div>
   );
 }
