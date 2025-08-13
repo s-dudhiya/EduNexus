@@ -146,49 +146,6 @@ const FacultyDashboard = () => {
             </div>
             
             <div className="flex items-center gap-2">
-              {/* Notifications Modal */}
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button variant="ghost" size="icon" className="relative h-9 w-9">
-                    <Bell className="h-4 w-4" />
-                    <span className="absolute -top-1 -right-1 h-2 w-2 bg-destructive rounded-full" />
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[500px]">
-                  <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
-                      <Bell className="h-5 w-5" />
-                      Notifications
-                    </DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4 max-h-96 overflow-y-auto">
-                    {notifications.map((notification) => (
-                      <Card key={notification.id} className={`${!notification.read ? 'bg-muted/50' : ''}`}>
-                        <CardContent className="p-4">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <h4 className="font-medium text-sm">{notification.title}</h4>
-                                <Badge 
-                                  variant={notification.type === 'warning' ? 'destructive' : notification.type === 'success' ? 'default' : 'secondary'} 
-                                  className="text-xs"
-                                >
-                                  {notification.type}
-                                </Badge>
-                              </div>
-                              <p className="text-sm text-muted-foreground mb-2">{notification.message}</p>
-                              <span className="text-xs text-muted-foreground">{notification.time}</span>
-                            </div>
-                            {!notification.read && (
-                              <div className="h-2 w-2 bg-primary rounded-full mt-1" />
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </DialogContent>
-              </Dialog>
 
               {/* --- USER PROFILE MODAL (THIS SECTION IS NOW DYNAMIC) --- */}
               <Dialog>

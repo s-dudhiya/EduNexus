@@ -70,20 +70,6 @@ const DashboardHome = () => {
       icon: Award,
       color: "bg-green-100",
       iconColor: "text-green-600"
-    },
-    {
-      title: "Pending Assignments",
-      value: dashboardData?.pending_assignments || 0,
-      icon: FileText,
-      color: "bg-orange-100",
-      iconColor: "text-orange-600"
-    },
-    {
-      title: "Upcoming Exams",
-      value: dashboardData?.upcoming_exams || 0,
-      icon: ClipboardCheck,
-      color: "bg-purple-100",
-      iconColor: "text-purple-600"
     }
   ];
 
