@@ -109,7 +109,7 @@ export function ExamPortal({ setSidebarLocked }) {
             test_output_1: relevantPaper.test_output_1,
             test_output_2: relevantPaper.test_output_2
           });
-          setTimeLeft(120 * 60);
+          setTimeLeft(3 * 60);
         } else {
           setError(`No exam papers found for semester ${studentSemester}.`);
         }
