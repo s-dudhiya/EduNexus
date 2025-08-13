@@ -18,7 +18,6 @@ const ManageExams = () => {
   const [subjects, setSubjects] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // --- FIX 1: Add 'reset' to the useForm hook ---
   const { control, register, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm({
     defaultValues: {
       subject_id: '',
@@ -44,26 +43,31 @@ const ManageExams = () => {
     fetchSubjects();
   }, [toast]);
 
-  // Add the initial, compulsory coding question
-  useEffect(() => {
-    if (questions.length === 0) {
-      addQuestion({
-        type: 'code',
-        question: '',
-        test_output_1: '',
-        test_output_2_input: '',
-        test_output_2_output: '',
-        isCompulsory: true
-      });
-    }
-  }, [addQuestion, questions.length]);
-
-  const addNewQuestion = () => {
+  const addMcqQuestion = () => {
     addQuestion({
       type: 'mcq',
       question: '',
       options: ['', '', '', ''],
       answer: ''
+    });
+  };
+
+  const addCodeQuestion = () => {
+    const hasCodeQuestion = watch('questions').some(q => q.type === 'code');
+    if (hasCodeQuestion) {
+      toast({
+        title: "Limit Reached",
+        description: "You can only add one coding question per exam.",
+        variant: "destructive"
+      });
+      return;
+    }
+    addQuestion({
+      type: 'code',
+      question: '',
+      test_output_1: '',
+      test_output_2_input: '',
+      test_output_2_output: '',
     });
   };
 
@@ -102,7 +106,6 @@ const ManageExams = () => {
         title: "Exam Created Successfully",
         description: "The new exam paper has been saved.",
       });
-      // --- FIX 2: Call reset() to clear the form ---
       reset();
       navigate('/faculty-dashboard');
     } catch (error) {
@@ -170,7 +173,10 @@ const ManageExams = () => {
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 Questions ({questions.length})
-                <Button type="button" onClick={addNewQuestion}><Plus className="h-4 w-4 mr-2" />Add MCQ</Button>
+                <div className="flex items-center gap-2">
+                  <Button type="button" variant="outline" onClick={addCodeQuestion}><Plus className="h-4 w-4 mr-2" />Add Code</Button>
+                  <Button type="button" onClick={addMcqQuestion}><Plus className="h-4 w-4 mr-2" />Add MCQ</Button>
+                </div>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -182,11 +188,9 @@ const ManageExams = () => {
                         <Badge variant="secondary">Q{index + 1}</Badge>
                         <Badge variant="outline">{question.type.toUpperCase()}</Badge>
                       </div>
-                      {!question.isCompulsory && (
-                        <Button type="button" variant="ghost" size="sm" onClick={() => removeQuestion(index)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
+                      <Button type="button" variant="ghost" size="sm" onClick={() => removeQuestion(index)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
