@@ -49,12 +49,12 @@ class CurrentSemMarksSerializer(serializers.ModelSerializer):
 class PastMarksSerializer(serializers.ModelSerializer):
     class Meta:
         model = PastMarks
-        fields = '__all__'
+        fields = '__all__' # Use all fields directly from the model
 
 class PracticalMarksSerializer(serializers.ModelSerializer):
     class Meta:
         model = PracticalMarks
-        fields = '__all__'
+        fields = '__all__' # Use all fields directly from the model
 
 class SubjectDetailsSerializer(serializers.ModelSerializer):
     class Meta:

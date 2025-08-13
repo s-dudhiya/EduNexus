@@ -1,285 +1,223 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import axios from 'axios';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileText } from 'lucide-react';
+import { FileText, Search, Loader2, BarChart3 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { Progress } from '@/components/ui/progress';
 
-// Dummy data based on models
-const students = [
-  { enrollment_no: 101, name: 'Alice' },
-  { enrollment_no: 102, name: 'Bob' },
-  { enrollment_no: 103, name: 'Charlie' },
-  { enrollment_no: 201, name: 'David' },
-  { enrollment_no: 202, name: 'Eve' },
-  { enrollment_no: 301, name: 'Frank' },
-  { enrollment_no: 302, name: 'Grace' },
-];
+// API Fetching Functions
+const fetchExams = async () => {
+  const { data } = await axios.get('/api/faculty-results/');
+  return data;
+};
 
-const subjects = [
-  { subject_id: 1, subject_name: 'Computer Science' },
-  { subject_id: 2, subject_name: 'History' },
-  { subject_id: 3, subject_name: 'Physics' },
-];
+const fetchExamResults = async (examName) => {
+  if (!examName) return [];
+  const { data } = await axios.get(`/api/faculty-results/?exam_name=${examName}`);
+  return data;
+};
 
-const exams = [
-  { id: 'Midterm Exam', name: 'Midterm Exam' },
-  { id: 'Final Exam', name: 'Final Exam' },
-  { id: 'Quiz 1', name: 'Quiz 1' },
-];
+const fetchStudentMarks = async (searchQuery) => {
+  if (!searchQuery) return { past: [], practical: [] };
+  const { data } = await axios.get(`/api/faculty-results/?search_query=${searchQuery}`);
+  return data;
+};
 
-const examResults = [
-  { id: 1, enrollment_no: 101, subject_id: 1, code_marks: 40, mcq_marks: 45, test_name: 'Midterm Exam' },
-  { id: 2, enrollment_no: 102, subject_id: 1, code_marks: 42, mcq_marks: 50, test_name: 'Midterm Exam' },
-  { id: 3, enrollment_no: 103, subject_id: 1, code_marks: 38, mcq_marks: 40, test_name: 'Midterm Exam' },
-  { id: 4, enrollment_no: 101, subject_id: 2, code_marks: 45, mcq_marks: 43, test_name: 'Midterm Exam' },
-  { id: 5, enrollment_no: 102, subject_id: 2, code_marks: 48, mcq_marks: 47, test_name: 'Midterm Exam' },
-  { id: 6, enrollment_no: 101, subject_id: 1, code_marks: 42, mcq_marks: 46, test_name: 'Final Exam' },
-  { id: 7, enrollment_no: 102, subject_id: 1, code_marks: 45, mcq_marks: 50, test_name: 'Final Exam' },
-  { id: 8, enrollment_no: 103, subject_id: 1, code_marks: 40, mcq_marks: 42, test_name: 'Final Exam' },
-  { id: 9, enrollment_no: 201, subject_id: 3, code_marks: 35, mcq_marks: 40, test_name: 'Quiz 1' },
-  { id: 10, enrollment_no: 202, subject_id: 3, code_marks: 38, mcq_marks: 42, test_name: 'Quiz 1' },
-];
+const fetchCurrentSemMarks = async () => {
+    const { data } = await axios.get('/api/faculty-results/?current_sem_marks=true');
+    return data;
+};
 
-const pastMarks = [
-    { id: 1, enrollment_no: 101, subject_id: 1, semester: 1, marks: 85 },
-    { id: 2, enrollment_no: 101, subject_id: 2, semester: 1, marks: 90 },
-    { id: 3, enrollment_no: 102, subject_id: 1, semester: 1, marks: 88 },
-    { id: 4, enrollment_no: 102, subject_id: 2, semester: 1, marks: 92 },
-  ];
-  
-  const practicalMarks = [
-    { id: 1, enrollment_no: 101, subject_id: 1, semester: 1, marks: 75 },
-    { id: 2, enrollment_no: 101, subject_id: 2, semester: 1, marks: 80 },
-    { id: 3, enrollment_no: 102, subject_id: 1, semester: 1, marks: 78 },
-    { id: 4, enrollment_no: 102, subject_id: 2, semester: 1, marks: 82 },
-  ];
-
-const ViewResults = () => {
+export default function ViewResults() {
   const [examStudentSearchTerm, setExamStudentSearchTerm] = useState('');
-  const [selectedExam, setSelectedExam] = useState(null);
+  const [currentSemSearchTerm, setCurrentSemSearchTerm] = useState('');
+  const [selectedExam, setSelectedExam] = useState('');
   const [studentSearchTerm, setStudentSearchTerm] = useState('');
-  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const [selectedTest, setSelectedTest] = useState('t1_marks');
 
-  const handleExamChange = (examName) => {
-    setSelectedExam(examName);
-  };
+  // Fetch data
+  const { data: exams, isLoading: examsLoading } = useQuery({ queryKey: ['exams'], queryFn: fetchExams, initialData: [] });
+  const { data: examResults, isLoading: examResultsLoading } = useQuery({
+    queryKey: ['examResults', selectedExam],
+    queryFn: () => fetchExamResults(selectedExam),
+    enabled: !!selectedExam,
+    initialData: []
+  });
+  const { data: studentMarks, isLoading: studentMarksLoading } = useQuery({
+    queryKey: ['studentMarks', debouncedSearchTerm],
+    queryFn: () => fetchStudentMarks(debouncedSearchTerm),
+    enabled: !!debouncedSearchTerm,
+    initialData: { past: [], practical: [] }
+  });
+  const { data: currentSemMarks, isLoading: currentSemMarksLoading } = useQuery({
+    queryKey: ['currentSemMarks'],
+    queryFn: fetchCurrentSemMarks,
+    initialData: []
+  });
 
-  const getResultsForExam = (examName) => {
-    if (!examName) return [];
-    return examResults
-      .filter((result) => result.test_name === examName)
-      .map((result) => {
-        const student = students.find((s) => s.enrollment_no === result.enrollment_no);
-        const subject = subjects.find((s) => s.subject_id === result.subject_id);
-        return {
-          ...result,
-          student_name: student ? student.name : 'Unknown',
-          subject_name: subject ? subject.subject_name : 'Unknown',
-          total_marks: result.code_marks + result.mcq_marks,
-        };
-      });
-  };
+  useEffect(() => {
+    const handler = setTimeout(() => setDebouncedSearchTerm(studentSearchTerm), 500);
+    return () => clearTimeout(handler);
+  }, [studentSearchTerm]);
 
-  const examResultsData = getResultsForExam(selectedExam);
+  // Filtering logic
+  const filteredExamResults = useMemo(() => {
+    if (!examResults) return [];
+    return examResults.filter(result => 
+      result.student_name.toLowerCase().includes(examStudentSearchTerm.toLowerCase()) ||
+      result.enrollment_no.toString().includes(examStudentSearchTerm)
+    );
+  }, [examResults, examStudentSearchTerm]);
 
-  const filteredExamResults = examResultsData.filter((result) =>
-    result.student_name.toLowerCase().includes(examStudentSearchTerm.toLowerCase()) ||
-    result.enrollment_no.toString().includes(examStudentSearchTerm)
-  );
+  const filteredCurrentSemMarks = useMemo(() => {
+    if (!currentSemMarks) return [];
+    return currentSemMarks.filter(mark =>
+        mark.student_name.toLowerCase().includes(currentSemSearchTerm.toLowerCase()) ||
+        mark.enrollment_number.toString().includes(currentSemSearchTerm)
+    );
+  }, [currentSemMarks, currentSemSearchTerm]);
 
-  const filteredStudents = students.filter(
-    (student) =>
-      student.name.toLowerCase().includes(studentSearchTerm.toLowerCase()) ||
-      student.enrollment_no.toString().includes(studentSearchTerm)
-  );
-
-  const handleStudentChange = (enrollment_no) => {
-    setSelectedStudent(enrollment_no);
-  };
-
-  const getStudentMarks = (enrollment_no) => {
-    if (!enrollment_no) return { past: [], practical: [] };
-    const studentPastMarks = pastMarks
-      .filter((mark) => mark.enrollment_no === parseInt(enrollment_no))
-      .map((mark) => ({
-        ...mark,
-        subject_name: subjects.find((s) => s.subject_id === mark.subject_id)?.subject_name || 'Unknown',
-      }));
-    const studentPracticalMarks = practicalMarks
-      .filter((mark) => mark.enrollment_no === parseInt(enrollment_no))
-      .map((mark) => ({
-        ...mark,
-        subject_name: subjects.find((s) => s.subject_id === mark.subject_id)?.subject_name || 'Unknown',
-      }));
-    return { past: studentPastMarks, practical: studentPracticalMarks };
-  };
-
-  const { past: pastMarksData, practical: practicalMarksData } = getStudentMarks(selectedStudent);
+  const cgpaChartData = useMemo(() => {
+    if (!studentMarks?.past) return [];
+    const pastGroups = {};
+    studentMarks.past.forEach(pm => {
+      if (!pastGroups[pm.semester]) pastGroups[pm.semester] = [];
+      pastGroups[pm.semester].push(pm.marks);
+    });
+    return Object.keys(pastGroups).sort((a, b) => a - b).map(sem => {
+      const gradePoints = pastGroups[sem].map(mark => mark / 10);
+      const cgpa = gradePoints.length > 0 ? gradePoints.reduce((a, b) => a + b, 0) / gradePoints.length : 0;
+      return { semester: `Semester ${sem}`, cgpa: cgpa };
+    });
+  }, [studentMarks]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted p-4">
-        <div className="max-w-7xl mx-auto space-y-6">
-            <Card className="shadow-card">
-                <CardHeader className="bg-gradient-primary text-primary-foreground rounded-t-lg">
-                    <CardTitle className="text-2xl flex items-center gap-2">
-                        <FileText className="h-6 w-6" />
-                        Student Results
-                    </CardTitle>
-                </CardHeader>
-            </Card>
-            <Card className="shadow-card">
-                <CardContent className="p-4">
-                    <Tabs defaultValue="exam-results">
-                    <TabsList>
-                        <TabsTrigger value="exam-results">Exam Results</TabsTrigger>
-                        <TabsTrigger value="student-marks">Student Marks</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="exam-results">
-                        <div className="flex flex-col gap-4 mt-4">
-                        <div className="flex items-center gap-4">
-                            <Input
-                            placeholder="Search for a student by name or enrollment no..."
-                            value={examStudentSearchTerm}
-                            onChange={(e) => setExamStudentSearchTerm(e.target.value)}
-                            className="w-1/2"
-                            />
-                            <Select onValueChange={handleExamChange} value={selectedExam}>
-                            <SelectTrigger className="w-1/2">
-                                <SelectValue placeholder="Select an exam" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {exams.map((exam) => (
-                                <SelectItem key={exam.id} value={exam.id}>
-                                    {exam.name}
-                                </SelectItem>
-                                ))}
-                            </SelectContent>
-                            </Select>
-                        </div>
-                        {selectedExam && (
-                            <div>
-                            <h3 className="text-lg font-semibold mb-2">Results for {selectedExam}</h3>
-                            <Table>
-                                <TableHeader>
-                                <TableRow>
-                                    <TableHead>Enrollment No</TableHead>
-                                    <TableHead>Student Name</TableHead>
-                                    <TableHead>Subject</TableHead>
-                                    <TableHead>Code Marks</TableHead>
-                                    <TableHead>MCQ Marks</TableHead>
-                                    <TableHead>Total Marks</TableHead>
-                                </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                {filteredExamResults.length > 0 ? (
-                                    filteredExamResults.map((result) => (
-                                    <TableRow key={result.id}>
-                                        <TableCell>{result.enrollment_no}</TableCell>
-                                        <TableCell>{result.student_name}</TableCell>
-                                        <TableCell>{result.subject_name}</TableCell>
-                                        <TableCell>{result.code_marks}</TableCell>
-                                        <TableCell>{result.mcq_marks}</TableCell>
-                                        <TableCell>{result.total_marks}</TableCell>
-                                    </TableRow>
-                                    ))
-                                ) : (
-                                    <TableRow>
-                                    <TableCell colSpan="6" className="text-center">No results found.</TableCell>
-                                    </TableRow>
-                                )}
-                                </TableBody>
-                            </Table>
-                            </div>
-                        )}
-                        </div>
-                    </TabsContent>
-                    <TabsContent value="student-marks">
-                        <div className="flex flex-col gap-4 mt-4">
-                        <div className="flex items-center gap-4">
-                            <Input
-                            placeholder="Search for a student by name or enrollment no..."
-                            value={studentSearchTerm}
-                            onChange={(e) => setStudentSearchTerm(e.target.value)}
-                            className="w-1/2"
-                            />
-                            <Select onValueChange={handleStudentChange} value={selectedStudent}>
-                            <SelectTrigger className="w-1/2">
-                                <SelectValue placeholder="Select a student" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {filteredStudents.map((student) => (
-                                <SelectItem key={student.enrollment_no} value={student.enrollment_no.toString()}>
-                                    {student.name} ({student.enrollment_no})
-                                </SelectItem>
-                                ))}
-                            </SelectContent>
-                            </Select>
-                        </div>
-                        {selectedStudent && (
-                            <div>
-                            <h3 className="text-lg font-semibold mb-2 mt-4">Past Marks</h3>
-                            <Table>
-                                <TableHeader>
-                                <TableRow>
-                                    <TableHead>Semester</TableHead>
-                                    <TableHead>Subject</TableHead>
-                                    <TableHead>Marks</TableHead>
-                                </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                {pastMarksData.length > 0 ? (
-                                    pastMarksData.map((mark) => (
-                                    <TableRow key={mark.id}>
-                                        <TableCell>{mark.semester}</TableCell>
-                                        <TableCell>{mark.subject_name}</TableCell>
-                                        <TableCell>{mark.marks}</TableCell>
-                                    </TableRow>
-                                    ))
-                                ) : (
-                                    <TableRow>
-                                    <TableCell colSpan="3" className="text-center">No past marks found for this student.</TableCell>
-                                    </TableRow>
-                                )}
-                                </TableBody>
-                            </Table>
+      <div className="max-w-7xl mx-auto space-y-6">
+        <Card className="shadow-card">
+          <CardHeader className="bg-gradient-primary text-primary-foreground rounded-t-lg">
+            <CardTitle className="text-2xl flex items-center gap-2"><FileText className="h-6 w-6" />Student Results</CardTitle>
+          </CardHeader>
+        </Card>
+        <Card className="shadow-card">
+          <CardContent className="p-4">
+            <Tabs defaultValue="exam-results">
+              <TabsList>
+                <TabsTrigger value="exam-results">Online Exam Results</TabsTrigger>
+                <TabsTrigger value="current-sem-marks">Current Semester Marks</TabsTrigger>
+                <TabsTrigger value="past-marks">Past Marks</TabsTrigger>
+              </TabsList>
 
-                            <h3 className="text-lg font-semibold mb-2 mt-4">Practical Marks</h3>
-                            <Table>
-                                <TableHeader>
-                                <TableRow>
-                                    <TableHead>Semester</TableHead>
-                                    <TableHead>Subject</TableHead>
-                                    <TableHead>Marks</TableHead>
+              <TabsContent value="exam-results">
+                <div className="flex items-center gap-4 mt-4">
+                  <Input placeholder="Search by name or enrollment..." value={examStudentSearchTerm} onChange={(e) => setExamStudentSearchTerm(e.target.value)} className="flex-1"/>
+                  <Select onValueChange={setSelectedExam} value={selectedExam}>
+                    <SelectTrigger className="w-[280px]"><SelectValue placeholder="Select an exam" /></SelectTrigger>
+                    <SelectContent>{exams.map((examName) => (<SelectItem key={examName} value={examName}>{examName}</SelectItem>))}</SelectContent>
+                  </Select>
+                </div>
+                {examResultsLoading && <div className="flex justify-center p-4"><Loader2 className="h-6 w-6 animate-spin" /></div>}
+                {selectedExam && !examResultsLoading && (
+                  <Table className="mt-4">
+                    <TableHeader><TableRow><TableHead>Enrollment No</TableHead><TableHead>Student Name</TableHead><TableHead>Subject</TableHead><TableHead>Code</TableHead><TableHead>MCQ</TableHead><TableHead>Total</TableHead></TableRow></TableHeader>
+                    <TableBody>
+                      {filteredExamResults.map((result) => (
+                        <TableRow key={result.id}>
+                          <TableCell>{result.enrollment_no}</TableCell>
+                          <TableCell>{result.student_name}</TableCell>
+                          <TableCell>{result.subject_name}</TableCell>
+                          <TableCell>{result.code_marks}</TableCell>
+                          <TableCell>{result.mcq_marks}</TableCell>
+                          <TableCell>{result.code_marks + result.mcq_marks}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </TabsContent>
+
+              <TabsContent value="current-sem-marks">
+                <div className="flex items-center gap-4 mt-4">
+                    <Input placeholder="Search by name or enrollment..." value={currentSemSearchTerm} onChange={(e) => setCurrentSemSearchTerm(e.target.value)} className="flex-1"/>
+                    <Select onValueChange={setSelectedTest} defaultValue="t1_marks">
+                        <SelectTrigger className="w-[280px]"><SelectValue placeholder="Select Test" /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="t1_marks">Test 1 Marks</SelectItem>
+                            <SelectItem value="t2_marks">Test 2 Marks</SelectItem>
+                            <SelectItem value="t3_marks">Test 3 Marks</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+                {currentSemMarksLoading && <div className="flex justify-center p-4"><Loader2 className="h-6 w-6 animate-spin" /></div>}
+                {!currentSemMarksLoading && (
+                    <Table className="mt-4">
+                        <TableHeader><TableRow><TableHead>Enrollment No</TableHead><TableHead>Student Name</TableHead><TableHead>Subject</TableHead><TableHead>Marks</TableHead></TableRow></TableHeader>
+                        <TableBody>
+                            {filteredCurrentSemMarks.map((mark) => (
+                                <TableRow key={mark.id}>
+                                    <TableCell>{mark.enrollment_number}</TableCell>
+                                    <TableCell>{mark.student_name}</TableCell>
+                                    <TableCell>{mark.subject_name}</TableCell>
+                                    <TableCell>{mark[selectedTest]}</TableCell>
                                 </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                {practicalMarksData.length > 0 ? (
-                                    practicalMarksData.map((mark) => (
-                                    <TableRow key={mark.id}>
-                                        <TableCell>{mark.semester}</TableCell>
-                                        <TableCell>{mark.subject_name}</TableCell>
-                                        <TableCell>{mark.marks}</TableCell>
-                                    </TableRow>
-                                    ))
-                                ) : (
-                                    <TableRow>
-                                    <TableCell colSpan="3" className="text-center">No practical marks found for this student.</TableCell>
-                                    </TableRow>
-                                )}
-                                </TableBody>
-                            </Table>
+                            ))}
+                        </TableBody>
+                    </Table>
+                )}
+              </TabsContent>
+
+              <TabsContent value="past-marks">
+                <div className="relative mt-4">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input placeholder="Search by enrollment no or name to view past marks..." value={studentSearchTerm} onChange={(e) => setStudentSearchTerm(e.target.value)} className="pl-10"/>
+                </div>
+                {studentMarksLoading && <div className="flex justify-center p-4"><Loader2 className="h-6 w-6 animate-spin" /></div>}
+                {debouncedSearchTerm && !studentMarksLoading && studentMarks && (
+                  <div className="grid lg:grid-cols-2 gap-6 mt-6">
+                    <Card className="shadow-card">
+                      <CardHeader><CardTitle className="text-sm flex items-center gap-2"><BarChart3 className="h-4 w-4" />CGPA Progress</CardTitle></CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          {cgpaChartData.map((data, index) => (
+                            <div key={index} className="space-y-1">
+                              <div className="flex justify-between text-sm">
+                                <span>{data.semester}</span>
+                                <span className="font-medium">{data.cgpa.toFixed(2)} CGPA</span>
+                              </div>
+                              <Progress value={data.cgpa * 10} />
                             </div>
-                        )}
+                          ))}
                         </div>
-                    </TabsContent>
-                    </Tabs>
-                </CardContent>
-            </Card>
-        </div>
+                      </CardContent>
+                    </Card>
+                    <Card className="shadow-card">
+                      <CardHeader><CardTitle className="text-sm flex items-center gap-2"><BarChart3 className="h-4 w-4" />Practical Marks</CardTitle></CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          {studentMarks.practical.map((mark, index) => (
+                            <div key={index} className="space-y-1">
+                              <div className="flex justify-between text-sm">
+                                <span>{mark.subject_name}</span>
+                                <span className="font-medium">{mark.marks} / 100</span>
+                              </div>
+                              <Progress value={mark.marks} />
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
-
-export default ViewResults;

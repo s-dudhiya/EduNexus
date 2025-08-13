@@ -1,7 +1,7 @@
 from django.urls import path
 from .views import( ExamResultListView, UserDetail, CustomLoginView, VerifyTokenView,ExamPaperListView,RunCodeView,SubmitExamView,AttendanceView,
                 StudentDashboardSummaryView,StudentResultsView,NotesView,NoteDownloadView,SubjectListView,
-                ExamPaperCreateView, BranchListView,StudentByBranchView,MarkAttendanceView,NoteDeleteView  )
+                ExamPaperCreateView, BranchListView,StudentByBranchView,MarkAttendanceView,NoteDeleteView,FacultyResultsView,FacultyStudentListView  )
 
 urlpatterns = [
     path('login/', CustomLoginView.as_view(), name='custom_login'),
@@ -22,4 +22,6 @@ urlpatterns = [
     path('mark-attendance/', MarkAttendanceView.as_view(), name='mark-attendance'),
     path('branches/', BranchListView.as_view(), name='branch-list'),
     path('notes/<int:pk>/delete/', NoteDeleteView.as_view(), name='note_delete'),
+    path('faculty-results/', FacultyResultsView.as_view(), name='faculty-results'),
+    path('faculty-students/', FacultyStudentListView.as_view(), name='faculty-student-list'),
 ]

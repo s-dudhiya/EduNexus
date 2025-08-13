@@ -704,3 +704,98 @@ class NoteDeleteView(APIView):
         note.delete()
         # A 204 No Content response is standard for a successful deletion.
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+class FacultyResultsView(APIView):
+    """
+    A multi-purpose view for the faculty results page.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        user = self.request.user
+        if not isinstance(user, Faculty):
+            return Response({"error": "User is not a faculty member."}, status=status.HTTP_403_FORBIDDEN)
+
+        faculty_semester = user.sem
+        
+        # Create lookup maps for student and subject names
+        students_in_sem = StudentData.objects.filter(semester=faculty_semester)
+        subjects_in_sem = SubjectDetails.objects.filter(sem=faculty_semester)
+        student_map = {s.enrollment_no: s.name for s in students_in_sem}
+        subject_map = {s.subject_id: s.subject_name for s in subjects_in_sem}
+
+        # Action 1: Get list of unique exam names
+        exam_name_param = request.query_params.get('exam_name')
+        if exam_name_param is None and 'search_query' not in request.query_params and 'current_sem_marks' not in request.query_params:
+            exam_names = ExamResult.objects.filter(
+                enrollment_no__in=students_in_sem.values_list('enrollment_no', flat=True)
+            ).values_list('test_name', flat=True).distinct()
+            return Response(list(exam_names))
+
+        # Action 2: Get results for a specific exam
+        if exam_name_param:
+            results = ExamResult.objects.filter(test_name=exam_name_param, enrollment_no__in=students_in_sem)
+            response_data = []
+            for result in results:
+                response_data.append({
+                    "id": result.id,
+                    "enrollment_no": result.enrollment_no,
+                    "student_name": student_map.get(result.enrollment_no, "Unknown"),
+                    "subject_name": subject_map.get(result.subject_id, "Unknown"),
+                    "code_marks": result.code_marks,
+                    "mcq_marks": result.mcq_marks,
+                })
+            return Response(response_data)
+
+        # Action 3: Search for a student and get their past marks
+        search_query = request.query_params.get('search_query')
+        if search_query:
+            try:
+                if search_query.isdigit():
+                    student = StudentData.objects.get(enrollment_no=search_query, semester=faculty_semester)
+                else:
+                    student = StudentData.objects.get(name__iexact=search_query, semester=faculty_semester)
+            except (StudentData.DoesNotExist, ValueError):
+                return Response({"past": [], "practical": []})
+
+            past_marks = PastMarks.objects.filter(enrollment_no=student.enrollment_no)
+            practical_marks = PracticalMarks.objects.filter(enrollment_no=student.enrollment_no)
+            
+            past_data = [{**item, 'subject_name': subject_map.get(item['subject_id'], 'Unknown')} for item in PastMarksSerializer(past_marks, many=True).data]
+            practical_data = [{**item, 'subject_name': subject_map.get(item['subject_id'], 'Unknown')} for item in PracticalMarksSerializer(practical_marks, many=True).data]
+            
+            return Response({"past": past_data, "practical": practical_data})
+            
+        # Action 4: Get current semester T1, T2, T3 marks
+        if 'current_sem_marks' in request.query_params:
+            marks = CurrentSemMarks.objects.filter(enrollment_number__in=students_in_sem)
+            response_data = []
+            for mark in marks:
+                response_data.append({
+                    "id": mark.id,
+                    "enrollment_number": mark.enrollment_number,
+                    "student_name": student_map.get(mark.enrollment_number, "Unknown"),
+                    "subject_name": subject_map.get(mark.subject_id, "Unknown"),
+                    "t1_marks": mark.t1_marks,
+                    "t2_marks": mark.t2_marks,
+                    "t3_marks": mark.t3_marks,
+                })
+            return Response(response_data)
+
+        return Response({"error": "Invalid request"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class FacultyStudentListView(APIView):
+    """
+    Provides a list of all students in the logged-in faculty's semester.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        user = self.request.user
+        if not isinstance(user, Faculty):
+            return Response({"error": "User is not a faculty member."}, status=status.HTTP_403_FORBIDDEN)
+        
+        students = StudentData.objects.filter(semester=user.sem)
+        serializer = StudentDataSerializer(students, many=True)
+        return Response(serializer.data)
