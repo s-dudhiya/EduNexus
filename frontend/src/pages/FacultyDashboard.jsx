@@ -31,7 +31,6 @@ import { AppSidebar } from '@/components/AppSidebar';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
-import Dashboard from '@/components/portal-faculty/Dashboard';
 import ManageExams from '@/components/portal-faculty/ManageExams';
 import MarkAttendance from '@/components/portal-faculty/MarkAttendance';
 import FacultyChat from '@/components/portal-faculty/FacultyChat';
@@ -44,13 +43,6 @@ const FacultyDashboard = () => {
   const navigate = useNavigate();
 
   const modules = [
-    {
-      id: 'dashboard',
-      title: 'Dashboard',
-      description: 'Overview of all activities',
-      icon: Home,
-      component: Dashboard,
-    },
     {
       id: 'manage-exams',
       title: 'Manage Exams',
@@ -88,7 +80,7 @@ const FacultyDashboard = () => {
     }
   ];
 
-  const ActiveComponent = modules.find(m => m.id === activeModule)?.component || Dashboard;
+  const ActiveComponent = modules.find(m => m.id === activeModule)?.component || ManageExams;
 
   const handleLogout = () => {
     logout();

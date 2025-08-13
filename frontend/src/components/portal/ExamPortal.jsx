@@ -95,13 +95,16 @@ export function ExamPortal({ setSidebarLocked }) {
 
   const handleSelectExam = (paper) => {
     const formattedQuestions = [];
-    formattedQuestions.push({
-      id: `coding_${paper.id}`,
-      title: "Coding Challenge",
-      description: paper.code_question,
-      type: "coding",
-      points: 9
-    });
+
+    if (paper.code_question && paper.code_question.trim() !== "") {
+      formattedQuestions.push({
+        id: `coding_${paper.id}`,
+        title: "Coding Challenge",
+        description: paper.code_question,
+        type: "coding",
+        points: 9
+      });
+    }
 
     Object.entries(paper.mcq_ques).forEach(([num, mcq]) => {
       formattedQuestions.push({
@@ -167,8 +170,9 @@ export function ExamPortal({ setSidebarLocked }) {
       }
     });
 
-    const codingScore = codePassed === true ? 9 : 0;
-    setFinalScores({ mcqScore, codingScore });
+    const hasCodingQuestion = selectedExam.questions.some(q => q.type === 'coding');
+    const codingScore = hasCodingQuestion && codePassed === true ? 9 : 0;
+    setFinalScores({ mcqScore, codingScore, hasCodingQuestion });
 
     const resultData = {
       enrollment_no: user.enrollment_no,
@@ -323,7 +327,7 @@ export function ExamPortal({ setSidebarLocked }) {
             <p className="text-muted-foreground mb-4">Your results have been recorded.</p>
             <div className="text-left space-y-2">
               <p><strong>MCQ Score:</strong> {finalScores.mcqScore}</p>
-              <p><strong>Coding Score:</strong> {finalScores.codingScore}</p>
+              {finalScores.hasCodingQuestion && <p><strong>Coding Score:</strong> {finalScores.codingScore}</p>}
               <p className="font-bold text-lg">Total Score: {finalScores.mcqScore + finalScores.codingScore}</p>
             </div>
             <Button className="mt-6" onClick={() => window.location.href = '/student-dashboard'}>Return to Dashboard</Button>
@@ -504,14 +508,14 @@ export function ExamPortal({ setSidebarLocked }) {
             <div className="lg:col-span-3 space-y-6">
               <Card className="shadow-card">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <span className="bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center text-sm">{currentQuestion + 1}</span>
-                    {questions[currentQuestion]?.title}
-                    <Badge variant="outline" className="ml-auto">{questions[currentQuestion]?.points} points</Badge>
+                                    <CardTitle className="flex items-center gap-2">
+                    <span className="bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center text-sm flex-shrink-0">{currentQuestion + 1}</span>
+                    {questions[currentQuestion]?.description}
+                    <Badge variant="outline" className="ml-auto flex-shrink-0">{questions[currentQuestion]?.points} M</Badge>
+                    
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground mb-6">{questions[currentQuestion]?.description}</p>
                   {questions[currentQuestion]?.type === 'coding' ? (
                     <Tabs defaultValue="code" className="w-full">
                       <TabsList className="grid w-full grid-cols-3">
