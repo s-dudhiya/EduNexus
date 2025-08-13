@@ -2,7 +2,7 @@
 
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import StudentData, Faculty, ExamPaper,ExamResult, Attendance, CurrentSemMarks, PastMarks, PracticalMarks ,SubjectDetails
+from .models import StudentData, Faculty, ExamPaper,ExamResult, Attendance, CurrentSemMarks, PastMarks, PracticalMarks ,SubjectDetails, Notes
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -59,4 +59,17 @@ class PracticalMarksSerializer(serializers.ModelSerializer):
 class SubjectDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = SubjectDetails
+        fields = '__all__'
+
+
+class NotesListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notes
+        # We exclude 'doc' so we don't send large files in the list view.
+        fields = ['id', 'uploader_id', 'uploader_name', 'subject_name', 'desc', 'upload_date']
+
+# This serializer is for UPLOADING notes. It includes all fields.
+class NotesUploadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notes
         fields = '__all__'

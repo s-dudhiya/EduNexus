@@ -1,6 +1,10 @@
 from django.urls import path
 from .views import( UserDetail, CustomLoginView, VerifyTokenView,ExamPaperListView,RunCodeView,SubmitExamView,AttendanceView,
+<<<<<<< HEAD
                    StudentDashboardSummaryView,StudentResultsView, ExamResultListView )
+=======
+                   StudentDashboardSummaryView,StudentResultsView,NotesView,NoteDownloadView )
+>>>>>>> e7484d99a037ed8b12dd97f001676e7a00474739
 
 urlpatterns = [
     path('login/', CustomLoginView.as_view(), name='custom_login'),
@@ -13,4 +17,6 @@ urlpatterns = [
     path('attendance/', AttendanceView.as_view(), name='attendance_list'),
     path('student-dashboard-summary/<int:enrollment_no>/', StudentDashboardSummaryView.as_view(), name='student_dashboard_summary'),
     path('student-results/', StudentResultsView.as_view(), name='student_results'),
+     path('notes/', NotesView.as_view(), name='notes_list_upload'),
+    path('notes/<int:pk>/download/', NoteDownloadView.as_view(), name='note_download'),
 ]
