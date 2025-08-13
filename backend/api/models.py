@@ -16,6 +16,7 @@ class ExamPaper(models.Model):
     test_output_1 = models.CharField(max_length=2500)
     test_output_2 = models.JSONField()
     mcq_ques = models.JSONField()
+    sem = models.IntegerField(null=True, blank=True)
 
 class ExamResult(models.Model):
     id = models.AutoField(primary_key=True)
