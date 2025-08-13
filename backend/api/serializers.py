@@ -85,3 +85,8 @@ class ExamPaperCreateSerializer(serializers.ModelSerializer):
         model = ExamPaper
         # These fields match your updated ExamPaper model
         fields = ['subject_id', 'sem', 'code_question', 'test_output_1', 'test_output_2', 'mcq_ques']
+
+class StudentForAttendanceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StudentData
+        fields = ['enrollment_no', 'name']
