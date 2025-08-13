@@ -32,6 +32,16 @@ const StudentDashboard = () => {
   const [activeModule, setActiveModule] = useState('dashboard');
   const { user, logout } = useAuth(); // Get the logged-in user's data
   const navigate = useNavigate();
+  const [sidebarLocked, setSidebarLocked] = useState(false);
+
+  const [isSidebarOpen, setSidebarOpen] = useState(true);
+
+  const handleSetSidebarLocked = (locked) => {
+    setSidebarLocked(locked);
+    if (locked) {
+      setSidebarOpen(false);
+    }
+  };
 
   const modules = [
     {
@@ -107,17 +117,18 @@ const StudentDashboard = () => {
   };
 
   return (
-    <SidebarProvider>
+    <SidebarProvider open={isSidebarOpen} onOpenChange={setSidebarOpen}>
       <div className="flex min-h-screen w-full bg-background">
         <AppSidebar 
           activeModule={activeModule} 
           onModuleChange={setActiveModule} 
+          isLocked={sidebarLocked}
         />
         
         <div className="flex-1 flex flex-col">
           {/* Header */}
           <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-6 shadow-sm">
-            <SidebarTrigger />
+            {!sidebarLocked && <SidebarTrigger />}
             
             <div className="flex items-center flex-1">
               <h1 className="text-xl font-semibold text-foreground">
@@ -265,7 +276,7 @@ const StudentDashboard = () => {
           {/* Main Content */}
           <main className="flex-1 overflow-auto p-6">
             <div className="animate-fade-in">
-              <ActiveComponent />
+              <ActiveComponent setSidebarLocked={handleSetSidebarLocked} />
             </div>
           </main>
         </div>

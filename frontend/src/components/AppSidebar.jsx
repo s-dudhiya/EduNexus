@@ -68,7 +68,7 @@ const studentModules = [
   }
 ];
 
-export function AppSidebar({ activeModule, onModuleChange, modules = studentModules }) {
+export function AppSidebar({ activeModule, onModuleChange, modules = studentModules, isLocked = false }) {
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
 
@@ -99,6 +99,7 @@ export function AppSidebar({ activeModule, onModuleChange, modules = studentModu
                       isActive={isActive}
                       className="group relative"
                       tooltip={module.title}
+                      disabled={isLocked}
                     >
                       <Icon className="h-5 w-5" />
                       {!isCollapsed && <span>{module.title}</span>}
@@ -117,7 +118,7 @@ export function AppSidebar({ activeModule, onModuleChange, modules = studentModu
       <SidebarFooter className="border-t border-sidebar-border">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild>
+            <SidebarMenuButton asChild disabled={isLocked}>
               <Link to="/auth" className="text-destructive hover:text-destructive">
                 <LogOut className="h-5 w-5" />
                 {!isCollapsed && <span>Logout</span>}

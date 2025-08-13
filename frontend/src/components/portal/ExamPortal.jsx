@@ -20,7 +20,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-export function ExamPortal() {
+export function ExamPortal({ setSidebarLocked }) {
   const { user } = useAuth();
 
   // State for fetching data
@@ -181,6 +181,18 @@ export function ExamPortal() {
       handleSubmitExam();
     }
   }, [timeUp, handleSubmitExam]);
+
+  useEffect(() => {
+    if (examState === 'active') {
+      setSidebarLocked(true);
+    } else {
+      setSidebarLocked(false);
+    }
+
+    return () => {
+      setSidebarLocked(false);
+    }
+  }, [examState, setSidebarLocked]);
   
   useEffect(() => {
     const handleVisibilityChange = () => {
