@@ -718,12 +718,14 @@ class FacultyResultsView(APIView):
 
         faculty_semester = user.sem
         
-        # Create lookup maps for student and subject names
-        students_in_sem = StudentData.objects.filter(semester=faculty_semester)
-        subjects_in_sem = SubjectDetails.objects.filter(sem=faculty_semester)
-        student_map = {s.enrollment_no: s.name for s in students_in_sem}
-        subject_map = {s.subject_id: s.subject_name for s in subjects_in_sem}
+        # --- FIX: Create a complete map of ALL subjects ---
+        all_subjects = SubjectDetails.objects.all()
+        subject_map = {s.subject_id: s.subject_name for s in all_subjects}
 
+        # Create a map of students in the faculty's semester for name lookups
+        students_in_sem = StudentData.objects.filter(semester=faculty_semester)
+        student_map = {s.enrollment_no: s.name for s in students_in_sem}
+        
         # Action 1: Get list of unique exam names
         exam_name_param = request.query_params.get('exam_name')
         if exam_name_param is None and 'search_query' not in request.query_params and 'current_sem_marks' not in request.query_params:
@@ -752,9 +754,9 @@ class FacultyResultsView(APIView):
         if search_query:
             try:
                 if search_query.isdigit():
-                    student = StudentData.objects.get(enrollment_no=search_query, semester=faculty_semester)
+                    student = StudentData.objects.get(enrollment_no=search_query)
                 else:
-                    student = StudentData.objects.get(name__iexact=search_query, semester=faculty_semester)
+                    student = StudentData.objects.get(name__iexact=search_query)
             except (StudentData.DoesNotExist, ValueError):
                 return Response({"past": [], "practical": []})
 
