@@ -243,6 +243,11 @@ class RunCodeView(APIView):
                 os.remove(temp_file_path)
 
 
+class ExamResultListView(generics.ListAPIView):
+    queryset = ExamResult.objects.all()
+    serializer_class = ExamResultSerializer
+    permission_classes = [IsAuthenticated]
+
 class SubmitExamView(APIView):
     """
     This view receives the calculated exam scores and saves them to the ExamResult table.
