@@ -57,14 +57,10 @@ const pastMarks = [
   ];
 
 const ViewResults = () => {
-  const [examSearchTerm, setExamSearchTerm] = useState('');
+  const [examStudentSearchTerm, setExamStudentSearchTerm] = useState('');
   const [selectedExam, setSelectedExam] = useState(null);
   const [studentSearchTerm, setStudentSearchTerm] = useState('');
   const [selectedStudent, setSelectedStudent] = useState(null);
-
-  const filteredExams = exams.filter((exam) =>
-    exam.name.toLowerCase().includes(examSearchTerm.toLowerCase())
-  );
 
   const handleExamChange = (examName) => {
     setSelectedExam(examName);
@@ -87,6 +83,11 @@ const ViewResults = () => {
   };
 
   const examResultsData = getResultsForExam(selectedExam);
+
+  const filteredExamResults = examResultsData.filter((result) =>
+    result.student_name.toLowerCase().includes(examStudentSearchTerm.toLowerCase()) ||
+    result.enrollment_no.toString().includes(examStudentSearchTerm)
+  );
 
   const filteredStudents = students.filter(
     (student) =>
@@ -139,9 +140,9 @@ const ViewResults = () => {
                         <div className="flex flex-col gap-4 mt-4">
                         <div className="flex items-center gap-4">
                             <Input
-                            placeholder="Search for an exam..."
-                            value={examSearchTerm}
-                            onChange={(e) => setExamSearchTerm(e.target.value)}
+                            placeholder="Search for a student by name or enrollment no..."
+                            value={examStudentSearchTerm}
+                            onChange={(e) => setExamStudentSearchTerm(e.target.value)}
                             className="w-1/2"
                             />
                             <Select onValueChange={handleExamChange} value={selectedExam}>
@@ -149,7 +150,7 @@ const ViewResults = () => {
                                 <SelectValue placeholder="Select an exam" />
                             </SelectTrigger>
                             <SelectContent>
-                                {filteredExams.map((exam) => (
+                                {exams.map((exam) => (
                                 <SelectItem key={exam.id} value={exam.id}>
                                     {exam.name}
                                 </SelectItem>
@@ -172,8 +173,8 @@ const ViewResults = () => {
                                 </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                {examResultsData.length > 0 ? (
-                                    examResultsData.map((result) => (
+                                {filteredExamResults.length > 0 ? (
+                                    filteredExamResults.map((result) => (
                                     <TableRow key={result.id}>
                                         <TableCell>{result.enrollment_no}</TableCell>
                                         <TableCell>{result.student_name}</TableCell>
@@ -185,7 +186,7 @@ const ViewResults = () => {
                                     ))
                                 ) : (
                                     <TableRow>
-                                    <TableCell colSpan="6" className="text-center">No results found for this exam.</TableCell>
+                                    <TableCell colSpan="6" className="text-center">No results found.</TableCell>
                                     </TableRow>
                                 )}
                                 </TableBody>
