@@ -20,6 +20,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+const NGROK_LINK = 'https://78a04fe1ef1c.ngrok-free.app'; // Update with your actual ngrok link
+
 export function ExamPortal({ setSidebarLocked }) {
   const { user } = useAuth();
 
@@ -260,7 +262,7 @@ export function ExamPortal({ setSidebarLocked }) {
         
         console.log("Attempting to send proctoring image...");
         try {
-          const response = await axios.post('https://f5ae0fdea51f.ngrok-free.app/analyze', {
+          const response = await axios.post(NGROK_LINK+"/analyze", {
             image_base64: image_base64
           });
 
