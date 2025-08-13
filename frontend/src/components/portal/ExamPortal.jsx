@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
-import { Camera, AlertTriangle, Clock, Monitor, Code, CheckCircle, Loader2, XCircle, ShieldCheck } from 'lucide-react';
+import { Camera, AlertTriangle, Clock, Monitor, Code, CheckCircle, Loader2, XCircle, ShieldCheck, ChevronRight } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   AlertDialog,
@@ -26,12 +26,13 @@ export function ExamPortal({ setSidebarLocked }) {
   const { user } = useAuth();
 
   // State for fetching data
-  const [exam, setExam] = useState(null);
+  const [exams, setExams] = useState([]);
+  const [selectedExam, setSelectedExam] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   // State for exam flow
-  const [examState, setExamState] = useState('details'); // details, proctoring, active
+  const [examState, setExamState] = useState('selection'); // selection, details, proctoring, active
   const [proctoringError, setProctoringError] = useState('');
   const [showSubmissionConfirm, setShowSubmissionConfirm] = useState(false);
   const [timeUp, setTimeUp] = useState(false);
@@ -63,64 +64,69 @@ export function ExamPortal({ setSidebarLocked }) {
         const papers = paperResponse.data;
         const studentSemester = user.semester;
 
-        const relevantPaper = papers.find(p => p.sem === studentSemester);
+        const relevantPapers = papers.filter(p => p.sem === studentSemester);
 
-        if (relevantPaper) {
+        if (relevantPapers.length > 0) {
           const resultsResponse = await axios.get('/api/exam-results/');
           const results = resultsResponse.data;
 
-          const hasSubmitted = results.some(
-            result => result.enrollment_no === user.enrollment_no && result.subject_id === relevantPaper.subject_id
+          const availablePapers = relevantPapers.filter(paper =>
+            !results.some(result =>
+              result.enrollment_no === user.enrollment_no && result.subject_id === paper.subject_id
+            )
           );
 
-          if (hasSubmitted) {
-            setError("You have already submitted your response for this exam.");
-            setLoading(false);
-            return;
+          if (availablePapers.length === 0) {
+            setError("You have already submitted all available exams for your semester.");
+          } else {
+            setExams(availablePapers);
           }
-
-          const formattedQuestions = [];
-          formattedQuestions.push({
-            id: `coding_${relevantPaper.id}`,
-            title: "Coding Challenge",
-            description: relevantPaper.code_question,
-            type: "coding",
-            points: 9
-          });
-
-          Object.entries(relevantPaper.mcq_ques).forEach(([num, mcq]) => {
-            formattedQuestions.push({
-              id: `${relevantPaper.id}_${num}`,
-              title: `Question ${num}`,
-              description: mcq.question,
-              type: "mcq",
-              options: mcq.options,
-              answer: mcq.answer,
-              points: 1
-            });
-          });
-
-          setExam({
-            id: relevantPaper.id,
-            subject_id: relevantPaper.subject_id,
-            title: `Exam for Subject ID: ${relevantPaper.subject_id}`,
-            duration: 120,
-            questions: formattedQuestions,
-            test_output_1: relevantPaper.test_output_1,
-            test_output_2: relevantPaper.test_output_2
-          });
-          setTimeLeft(1 * 60);
         } else {
           setError(`No exam papers found for semester ${studentSemester}.`);
         }
       } catch (err) {
-        setError("Failed to load the exam. Please try again later.");
+        setError("Failed to load exams. Please try again later.");
       } finally {
         setLoading(false);
       }
     };
     fetchExamData();
   }, [user]);
+
+  const handleSelectExam = (paper) => {
+    const formattedQuestions = [];
+    formattedQuestions.push({
+      id: `coding_${paper.id}`,
+      title: "Coding Challenge",
+      description: paper.code_question,
+      type: "coding",
+      points: 9
+    });
+
+    Object.entries(paper.mcq_ques).forEach(([num, mcq]) => {
+      formattedQuestions.push({
+        id: `${paper.id}_${num}`,
+        title: `Question ${num}`,
+        description: mcq.question,
+        type: "mcq",
+        options: mcq.options,
+        answer: mcq.answer,
+        points: 1
+      });
+    });
+
+    setSelectedExam({
+      id: paper.id,
+      subject_id: paper.subject_id,
+      title: `Exam for Subject ID: ${paper.subject_id}`,
+      duration: 120,
+      questions: formattedQuestions,
+      test_output_1: paper.test_output_1,
+      test_output_2: paper.test_output_2
+    });
+    setTimeLeft(1 * 60);
+    setExamState('details');
+  };
 
   const handleRunCode = async () => {
     const currentAnswer = answers[questions[currentQuestion]?.id] || '';
@@ -131,7 +137,7 @@ export function ExamPortal({ setSidebarLocked }) {
     try {
       const response = await axios.post('/api/run-code/', {
         code: currentAnswer,
-        exam_paper_id: exam.id,
+        exam_paper_id: selectedExam.id,
       });
 
       if (response.data.error) {
@@ -152,7 +158,7 @@ export function ExamPortal({ setSidebarLocked }) {
     setIsSubmitting(true);
 
     let mcqScore = 0;
-    exam.questions.forEach(q => {
+    selectedExam.questions.forEach(q => {
       if (q.type === 'mcq') {
         const studentAnswer = answers[q.id];
         if (studentAnswer && studentAnswer === q.answer) {
@@ -166,10 +172,10 @@ export function ExamPortal({ setSidebarLocked }) {
 
     const resultData = {
       enrollment_no: user.enrollment_no,
-      subject_id: exam.subject_id,
+      subject_id: selectedExam.subject_id,
       code_marks: codingScore,
       mcq_marks: mcqScore,
-      test_name: exam.title,
+      test_name: selectedExam.title,
     };
 
     try {
@@ -180,7 +186,7 @@ export function ExamPortal({ setSidebarLocked }) {
     } finally {
       setIsSubmitting(false);
     }
-  }, [isSubmitting, isSubmitted, exam, answers, codePassed, user]);
+  }, [isSubmitting, isSubmitted, selectedExam, answers, codePassed, user]);
 
   // Timer, Tab switch, and Webcam effects
   useEffect(() => {
@@ -327,17 +333,50 @@ export function ExamPortal({ setSidebarLocked }) {
     );
   }
 
+  if (examState === 'selection') {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-background to-muted">
+        <Card className="w-full max-w-2xl p-8 shadow-lg">
+          <CardHeader>
+            <CardTitle className="text-3xl mb-2 text-center">Select an Exam</CardTitle>
+            <CardDescription className="text-center">Choose one of the available exams to start.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {exams.length > 0 ? (
+              exams.map(paper => (
+                <Button
+                  key={paper.id}
+                  className="w-full justify-between h-auto p-4"
+                  variant="outline"
+                  onClick={() => handleSelectExam(paper)}
+                >
+                  <div className="text-left">
+                    <p className="font-bold text-lg">Subject: {paper.subject_id}</p>
+                    <p className="text-sm text-muted-foreground">Semester {paper.sem}</p>
+                  </div>
+                  <ChevronRight className="h-5 w-5" />
+                </Button>
+              ))
+            ) : (
+              <p className="text-center text-muted-foreground">No exams available for you at the moment.</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (examState === 'details') {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-background to-muted">
         <Card className="w-full max-w-2xl text-center p-8 shadow-lg">
           <CardHeader>
-            <CardTitle className="text-3xl mb-2">{exam?.title}</CardTitle>
+            <CardTitle className="text-3xl mb-2">{selectedExam?.title}</CardTitle>
             <CardDescription>Online Proctored Examination</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 text-left">
-            <p><strong>Duration:</strong> {exam?.duration} minutes</p>
-            <p><strong>Total Questions:</strong> {exam?.questions?.length}</p>
+            <p><strong>Duration:</strong> {selectedExam?.duration} minutes</p>
+            <p><strong>Total Questions:</strong> {selectedExam?.questions?.length}</p>
             <Alert>
               <AlertTriangle className="h-4 w-4" />
               <AlertTitle>Important Instructions</AlertTitle>
@@ -400,7 +439,7 @@ export function ExamPortal({ setSidebarLocked }) {
     );
   }
 
-  const questions = exam?.questions || [];
+  const questions = selectedExam?.questions || [];
   const progress = questions.length > 0 ? ((currentQuestion + 1) / questions.length) * 100 : 0;
 
   return (
@@ -438,7 +477,7 @@ export function ExamPortal({ setSidebarLocked }) {
             <CardHeader className="bg-gradient-primary text-primary-foreground rounded-t-lg">
               <div className="flex justify-between items-center">
                 <div>
-                  <CardTitle className="text-2xl">{exam?.title}</CardTitle>
+                  <CardTitle className="text-2xl">{selectedExam?.title}</CardTitle>
                   <p className="text-primary-foreground/80">Online Proctored Examination</p>
                 </div>
                 <div className="text-right">
@@ -487,7 +526,7 @@ export function ExamPortal({ setSidebarLocked }) {
                       <TabsContent value="test" className="mt-4">
                         <div className="bg-muted rounded-lg p-4">
                           <h4 className="font-semibold mb-2">Test Case 1:</h4>
-                          <pre className="text-sm whitespace-pre-wrap font-mono">{exam?.test_output_1 || "No test cases provided."}</pre>
+                          <pre className="text-sm whitespace-pre-wrap font-mono">{selectedExam?.test_output_1 || "No test cases provided."}</pre>
                         </div>
                       </TabsContent>
                       <TabsContent value="output" className="mt-4">
