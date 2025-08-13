@@ -50,25 +50,45 @@ export function ExamPortal({ setSidebarLocked }) {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [finalScores, setFinalScores] = useState(null);
 
+  const streamRef = useRef(null);
+
   useEffect(() => {
     const fetchExamData = async () => {
-      try {
-        const response = await axios.get('/api/exam-papers/');
-        const paper = response.data[0];
+      if (!user) return;
 
-        if (paper) {
+      try {
+        const paperResponse = await axios.get('/api/exam-papers/');
+        const papers = paperResponse.data;
+        const studentSemester = user.semester;
+
+        const relevantPaper = papers.find(p => p.sem === studentSemester);
+
+        if (relevantPaper) {
+          const resultsResponse = await axios.get('/api/exam-results/');
+          const results = resultsResponse.data;
+
+          const hasSubmitted = results.some(
+            result => result.enrollment_no === user.enrollment_no && result.subject_id === relevantPaper.subject_id
+          );
+
+          if (hasSubmitted) {
+            setError("You have already submitted your response for this exam.");
+            setLoading(false);
+            return;
+          }
+
           const formattedQuestions = [];
           formattedQuestions.push({
-            id: `coding_${paper.id}`,
+            id: `coding_${relevantPaper.id}`,
             title: "Coding Challenge",
-            description: paper.code_question,
+            description: relevantPaper.code_question,
             type: "coding",
             points: 9
           });
 
-          Object.entries(paper.mcq_ques).forEach(([num, mcq]) => {
+          Object.entries(relevantPaper.mcq_ques).forEach(([num, mcq]) => {
             formattedQuestions.push({
-              id: `${paper.id}_${num}`,
+              id: `${relevantPaper.id}_${num}`,
               title: `Question ${num}`,
               description: mcq.question,
               type: "mcq",
@@ -79,17 +99,17 @@ export function ExamPortal({ setSidebarLocked }) {
           });
 
           setExam({
-            id: paper.id,
-            subject_id: paper.subject_id,
-            title: `Exam for Subject ID: ${paper.subject_id}`,
+            id: relevantPaper.id,
+            subject_id: relevantPaper.subject_id,
+            title: `Exam for Subject ID: ${relevantPaper.subject_id}`,
             duration: 120,
             questions: formattedQuestions,
-            test_output_1: paper.test_output_1,
-            test_output_2: paper.test_output_2
+            test_output_1: relevantPaper.test_output_1,
+            test_output_2: relevantPaper.test_output_2
           });
           setTimeLeft(120 * 60);
         } else {
-          setError("No exam papers found.");
+          setError(`No exam papers found for semester ${studentSemester}.`);
         }
       } catch (err) {
         setError("Failed to load the exam. Please try again later.");
@@ -98,7 +118,7 @@ export function ExamPortal({ setSidebarLocked }) {
       }
     };
     fetchExamData();
-  }, []);
+  }, [user]);
 
   const handleRunCode = async () => {
     const currentAnswer = answers[questions[currentQuestion]?.id] || '';
@@ -177,6 +197,15 @@ export function ExamPortal({ setSidebarLocked }) {
   }, [examState]);
 
   useEffect(() => {
+    // Cleanup stream on component unmount
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     if (timeUp) {
       handleSubmitExam();
     }
@@ -206,29 +235,69 @@ export function ExamPortal({ setSidebarLocked }) {
   }, []);
 
   useEffect(() => {
-    let stream;
-    if (webcamActive && videoRef.current) {
-      navigator.mediaDevices.getUserMedia({ video: true })
-        .then((s) => {
-          stream = s;
-          if (videoRef.current) videoRef.current.srcObject = stream;
-          setProctoringError('');
-        })
-        .catch(err => {
-          console.error("Webcam error:", err);
-          setProctoringError("Webcam access denied. Please enable camera permissions in your browser settings.");
-          setWebcamActive(false);
-        });
+    // Attach stream to video element when it's available
+    if (webcamActive && videoRef.current && streamRef.current) {
+      videoRef.current.srcObject = streamRef.current;
     }
-    return () => {
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-      }
-    };
-  }, [webcamActive]);
+  }, [webcamActive, examState]); // Rerun when view changes
 
-  const handleStartProctoring = () => {
-    setWebcamActive(true);
+  useEffect(() => {
+    if (examState !== 'active' || !webcamActive) {
+      return;
+    }
+
+    const proctoringInterval = setInterval(async () => {
+      const video = videoRef.current;
+      if (video && video.srcObject && video.readyState >= 3) { // 3: HAVE_FUTURE_DATA, 4: HAVE_ENOUGH_DATA
+        console.log("Video stream is active and ready. Capturing image.");
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const context = canvas.getContext('2d');
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        const image_base64 = canvas.toDataURL('image/jpeg');
+        
+        console.log("Attempting to send proctoring image...");
+        try {
+          const response = await axios.post('https://f5ae0fdea51f.ngrok-free.app/analyze', {
+            image_base64: image_base64
+          });
+
+          console.log("Proctoring response received:", response.data);
+
+          if (response.data.cheating_detected === true) {
+            console.log("Cheating detected! Deducting time.");
+            setTimeLeft(prevTime => Math.max(0, prevTime - 20));
+          }
+        } catch (error) {
+          console.error('Proctoring API error. This might be a CORS issue on your proctoring server.', error);
+        }
+      } else {
+        console.log("Proctoring check failed: Video stream not found or not ready.", {
+          hasVideoRef: !!video,
+          hasSrcObject: !!video?.srcObject,
+          readyState: video?.readyState
+        });
+      }
+    }, 5000); // Every 5 seconds
+
+    return () => {
+      clearInterval(proctoringInterval);
+    };
+  }, [examState, webcamActive]);
+
+  const handleStartProctoring = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      streamRef.current = stream;
+      setWebcamActive(true);
+      setProctoringError('');
+    } catch (err) {
+      console.error("Webcam error:", err);
+      setProctoringError("Webcam access denied. Please enable camera permissions in your browser settings.");
+      setWebcamActive(false);
+    }
   };
 
   const formatTime = (s) => `${Math.floor(s/3600).toString().padStart(2,'0')}:${Math.floor((s%3600)/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
