@@ -20,7 +20,9 @@ from .models import( StudentData, Faculty ,ExamPaper,ExamResult,Attendance,
                     CurrentSemMarks,SubjectDetails, PastMarks, PracticalMarks, SubjectDetails, Notes)
 # ------------------------------------
 from .serializers import (
-    CustomLoginSerializer, 
+    CustomLoginSerializer,
+    ExamPaperCreateSerializer,
+    SubjectSerializer, 
     UserSerializer, 
     StudentDataSerializer, 
     FacultySerializer,
@@ -472,3 +474,36 @@ class NoteDownloadView(APIView):
             return response
         except Notes.DoesNotExist:
             return Response({"error": "Note not found."}, status=status.HTTP_404_NOT_FOUND)
+
+class SubjectListView(APIView):
+    """
+    Provides a list of subjects filtered by the logged-in faculty's semester.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        user = self.request.user
+
+        # Ensure the user is a faculty member
+        if not isinstance(user, Faculty):
+            return Response({"error": "User is not a faculty member."}, status=status.HTTP_403_FORBIDDEN)
+
+        # Filter subjects based on the faculty's assigned semester
+        faculty_semester = user.sem
+        subjects = SubjectDetails.objects.filter(sem=faculty_semester)
+        
+        serializer = SubjectSerializer(subjects, many=True)
+        return Response(serializer.data)
+
+class ExamPaperCreateView(APIView):
+    """
+    Handles the creation of a new exam paper from the faculty dashboard.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        serializer = ExamPaperCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -108,7 +108,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'edunexus',
         'USER': 'root',
-        'PASSWORD': '',
+        'PASSWORD': 'alpha',
         'HOST': 'localhost',
         'PORT': '3306',
     }

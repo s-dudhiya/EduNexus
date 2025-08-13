@@ -109,7 +109,7 @@ export function ExamPortal({ setSidebarLocked }) {
             test_output_1: relevantPaper.test_output_1,
             test_output_2: relevantPaper.test_output_2
           });
-          setTimeLeft(3 * 60);
+          setTimeLeft(1 * 60);
         } else {
           setError(`No exam papers found for semester ${studentSemester}.`);
         }
@@ -148,7 +148,7 @@ export function ExamPortal({ setSidebarLocked }) {
   };
 
   const handleSubmitExam = useCallback(async () => {
-    if (isSubmitting) return;
+    if (isSubmitting || isSubmitted) return;
     setIsSubmitting(true);
 
     let mcqScore = 0;
@@ -180,7 +180,7 @@ export function ExamPortal({ setSidebarLocked }) {
     } finally {
       setIsSubmitting(false);
     }
-  }, [isSubmitting, exam, answers, codePassed, user]);
+  }, [isSubmitting, isSubmitted, exam, answers, codePassed, user]);
 
   // Timer, Tab switch, and Webcam effects
   useEffect(() => {
@@ -208,10 +208,10 @@ export function ExamPortal({ setSidebarLocked }) {
   }, []);
 
   useEffect(() => {
-    if (timeUp) {
+    if (timeUp && !isSubmitted) {
       handleSubmitExam();
     }
-  }, [timeUp, handleSubmitExam]);
+  }, [timeUp, handleSubmitExam, isSubmitted]);
 
   useEffect(() => {
     if (examState === 'active') {
