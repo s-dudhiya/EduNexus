@@ -1,11 +1,7 @@
 from django.urls import path
-<<<<<<< HEAD
-from .views import( ExamResultListView, UserDetail, CustomLoginView, VerifyTokenView,ExamPaperListView,RunCodeView,SubmitExamView,AttendanceView,StudentDashboardSummaryView,StudentResultsView,NotesView,NoteDownloadView )
-=======
 from .views import( ExamResultListView, UserDetail, CustomLoginView, VerifyTokenView,ExamPaperListView,RunCodeView,SubmitExamView,AttendanceView,
                 StudentDashboardSummaryView,StudentResultsView,NotesView,NoteDownloadView,SubjectListView,
                 ExamPaperCreateView, BranchListView,StudentByBranchView,MarkAttendanceView )
->>>>>>> 28d5452ac3ff740e96aeb774d9b843b7b5a34ce0
 
 urlpatterns = [
     path('login/', CustomLoginView.as_view(), name='custom_login'),

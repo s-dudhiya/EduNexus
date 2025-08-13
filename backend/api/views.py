@@ -579,7 +579,7 @@ class MarkAttendanceView(APIView):
 
         for item in attendance_data:
             enrollment_no = item['enrollment_no']
-            status = item['status']
+            statusi = item['status']
             
             try:
                 student = StudentData.objects.get(enrollment_no=enrollment_no)
@@ -587,16 +587,37 @@ class MarkAttendanceView(APIView):
             except (StudentData.DoesNotExist, SubjectDetails.DoesNotExist):
                 continue
 
-            att_record, created = Attendance.objects.get_or_create(
-                enrollment_no=enrollment_no,
-                subject_id=subject_id,
-                semester=student.semester,
-                subject_name=subject.subject_name,
-                defaults={'total_lectures': 0, 'total_attended': 0}
-            )
+            try:
+                att_record = Attendance.objects.get(
+                    enrollment_no=enrollment_no,
+                    subject_id=subject_id,
+                    semester=student.semester,
+                    subject_name=subject.subject_name
+                )
+                created = False
+            except Attendance.DoesNotExist:
+                att_record = Attendance(
+                    enrollment_no=enrollment_no,
+                    subject_id=subject_id,
+                    semester=student.semester,
+                    subject_name=subject.subject_name,
+                    total_lectures=0,
+                    total_attended=0,
+                    attd_date=today  # Set here to satisfy NOT NULL
+                )
+                created = True
+
+            att_record.total_lectures += 1
+            if statusi == 'present':
+                att_record.total_attended += 1
+
+            if not created:
+                att_record.attd_date = today  # Update for existing records
+
+            att_record.save()
             
             att_record.total_lectures += 1
-            if status == 'present':
+            if statusi == 'present':
                 att_record.total_attended += 1
             
             att_record.attd_date = today
