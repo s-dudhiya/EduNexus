@@ -37,7 +37,7 @@ from .serializers import (
     SubjectDetailsSerializer,
     NotesListSerializer,
     NotesUploadSerializer,
-    StudentForAttendanceSerializer,
+    StudentForAttendanceSerializer,NotesUploadSerializer
 )
 
 # This is the new, improved view for your custom login logic.
@@ -603,3 +603,83 @@ class MarkAttendanceView(APIView):
             att_record.save()
             
         return Response({"status": "success"}, status=status.HTTP_201_CREATED)
+
+class NotesView(APIView):
+    """
+    Handles listing notes and uploading notes for faculty.
+    - Students see notes for their semester.
+    - Faculty see only the notes they have uploaded.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        user = self.request.user
+
+        if isinstance(user, StudentData):
+            # Student logic: Filter notes by their current semester
+            student_semester = user.semester
+            notes = Notes.objects.filter(sem=student_semester)
+        
+        elif isinstance(user, Faculty):
+            # --- FIX: Faculty now only see their own uploads ---
+            notes = Notes.objects.filter(uploader_id=user.fac_id)
+            
+        else:
+            # If the user is neither, return an empty list
+            return Response([], status=status.HTTP_200_OK)
+
+        serializer = NotesListSerializer(notes, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, *args, **kwargs):
+        user = self.request.user
+
+        if not isinstance(user, Faculty):
+            return Response({"error": "Only faculty can upload notes."}, status=status.HTTP_403_FORBIDDEN)
+
+        file_obj = request.FILES.get('doc')
+        if not file_obj:
+            return Response({"error": "No document provided."}, status=status.HTTP_400_BAD_REQUEST)
+
+        data = {
+            "uploader_id": user.fac_id,
+            "uploader_name": user.fac_name,
+            "subject_name": request.data.get('subject_name'),
+            "desc": request.data.get('desc'),
+            "sem": user.sem,
+            "doc": file_obj.read()
+        }
+        
+        serializer = NotesUploadSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class NoteDeleteView(APIView):
+    """
+    Handles the deletion of a specific note.
+    Only the faculty member who uploaded the note can delete it.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, pk, *args, **kwargs):
+        user = self.request.user
+
+        # Check if the user is a faculty member
+        if not isinstance(user, Faculty):
+            return Response({"error": "Only faculty can delete notes."}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            note = Notes.objects.get(pk=pk)
+        except Notes.DoesNotExist:
+            return Response({"error": "Note not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Security check: Ensure the user deleting the note is the one who uploaded it.
+        if note.uploader_id != user.fac_id:
+            return Response({"error": "You do not have permission to delete this note."}, status=status.HTTP_403_FORBIDDEN)
+
+        note.delete()
+        # A 204 No Content response is standard for a successful deletion.
+        return Response(status=status.HTTP_204_NO_CONTENT)

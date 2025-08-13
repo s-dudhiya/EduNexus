@@ -90,3 +90,9 @@ class StudentForAttendanceSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudentData
         fields = ['enrollment_no', 'name']
+        
+# This serializer is for UPLOADING notes. It includes all fields.
+class NotesUploadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notes
+        fields = '__all__'
