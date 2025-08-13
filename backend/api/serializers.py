@@ -18,7 +18,7 @@ class StudentDataSerializer(serializers.ModelSerializer):
 class FacultySerializer(serializers.ModelSerializer):
     class Meta:
         model = Faculty
-        fields = ('fac_id', 'fac_name', 'fac_mail')
+        fields = ('fac_id', 'fac_name', 'fac_mail','sem')
 
 class CustomLoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
@@ -73,3 +73,20 @@ class NotesUploadSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notes
         fields = '__all__'
+        
+class SubjectSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SubjectDetails
+        fields = ['subject_id', 'subject_name', 'sem']
+
+# This serializer will validate and create a new ExamPaper instance from the form data.
+class ExamPaperCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ExamPaper
+        # These fields match your updated ExamPaper model
+        fields = ['subject_id', 'sem', 'code_question', 'test_output_1', 'test_output_2', 'mcq_ques']
+
+class StudentForAttendanceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StudentData
+        fields = ['enrollment_no', 'name']

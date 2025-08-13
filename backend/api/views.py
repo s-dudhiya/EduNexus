@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework import status, generics
 from django.contrib.auth.models import User
 from django.conf import settings
+from rest_framework import status
 import jwt
 import datetime
 from rest_framework.permissions import AllowAny
@@ -12,6 +13,7 @@ import subprocess
 import tempfile
 import sys
 import os
+from datetime import date
 from django.http import HttpResponse
 # --- ADDED IMPORTS FOR THE NEW VIEW ---
 from django.db.models import Sum, F, Window,Value
@@ -20,7 +22,9 @@ from .models import( StudentData, Faculty ,ExamPaper,ExamResult,Attendance,
                     CurrentSemMarks,SubjectDetails, PastMarks, PracticalMarks, SubjectDetails, Notes)
 # ------------------------------------
 from .serializers import (
-    CustomLoginSerializer, 
+    CustomLoginSerializer,
+    ExamPaperCreateSerializer,
+    SubjectSerializer, 
     UserSerializer, 
     StudentDataSerializer, 
     FacultySerializer,
@@ -32,7 +36,8 @@ from .serializers import (
     PracticalMarksSerializer,
     SubjectDetailsSerializer,
     NotesListSerializer,
-    NotesUploadSerializer
+    NotesUploadSerializer,
+    StudentForAttendanceSerializer,
 )
 
 # This is the new, improved view for your custom login logic.
@@ -472,3 +477,129 @@ class NoteDownloadView(APIView):
             return response
         except Notes.DoesNotExist:
             return Response({"error": "Note not found."}, status=status.HTTP_404_NOT_FOUND)
+
+class SubjectListView(APIView):
+    """
+    Provides a list of subjects filtered by the logged-in faculty's semester.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        user = self.request.user
+
+        # Ensure the user is a faculty member
+        if not isinstance(user, Faculty):
+            return Response({"error": "User is not a faculty member."}, status=status.HTTP_403_FORBIDDEN)
+
+        # Filter subjects based on the faculty's assigned semester
+        faculty_semester = user.sem
+        subjects = SubjectDetails.objects.filter(sem=faculty_semester)
+        
+        serializer = SubjectSerializer(subjects, many=True)
+        return Response(serializer.data)
+
+class ExamPaperCreateView(APIView):
+    """
+    Handles the creation of a new exam paper from the faculty dashboard.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        serializer = ExamPaperCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class BranchListView(APIView):
+    """
+    Provides a unique list of all student branches for the faculty's semester.
+    """
+    permission_classes = [IsAuthenticated]
+    def get(self, request, *args, **kwargs):
+        user = self.request.user
+        if not isinstance(user, Faculty):
+            return Response({"error": "User is not a faculty member."}, status=status.HTTP_403_FORBIDDEN)
+        
+        branches = StudentData.objects.filter(semester=user.sem).order_by('branch').values_list('branch', flat=True).distinct()
+        return Response(list(branches))
+
+class SubjectListView(APIView):
+    """
+    Provides a list of subjects filtered by the logged-in faculty's semester.
+    """
+    permission_classes = [IsAuthenticated]
+    def get(self, request, *args, **kwargs):
+        user = self.request.user
+        if not isinstance(user, Faculty):
+            return Response({"error": "User is not a faculty member."}, status=status.HTTP_403_FORBIDDEN)
+        
+        subjects = SubjectDetails.objects.filter(sem=user.sem)
+        serializer = SubjectSerializer(subjects, many=True)
+        return Response(serializer.data)
+
+class StudentByBranchView(APIView):
+    """
+    Provides a list of students filtered by branch and the faculty's semester.
+    """
+    permission_classes = [IsAuthenticated]
+    def get(self, request, branch, *args, **kwargs):
+        user = self.request.user
+        if not isinstance(user, Faculty):
+            return Response({"error": "User is not a faculty member."}, status=status.HTTP_403_FORBIDDEN)
+        
+        students = StudentData.objects.filter(branch=branch, semester=user.sem)
+        serializer = StudentForAttendanceSerializer(students, many=True)
+        return Response(serializer.data)
+
+class MarkAttendanceView(APIView):
+    """
+    Receives and saves attendance data. Enforces the "once per day per subject" rule.
+    """
+    permission_classes = [IsAuthenticated]
+    def post(self, request, *args, **kwargs):
+        subject_id = request.data.get('subject_id')
+        attendance_data = request.data.get('attendance')
+        user = self.request.user
+
+        if not subject_id or not attendance_data:
+            return Response({"error": "Subject and attendance data are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        today = date.today()
+        
+        enrollment_numbers = [item['enrollment_no'] for item in attendance_data]
+        existing_attendance = Attendance.objects.filter(
+            subject_id=subject_id,
+            enrollment_no__in=enrollment_numbers,
+            attd_date=today
+        )
+
+        if existing_attendance.exists():
+            return Response({"error": "Attendance has already been marked for this subject today."}, status=status.HTTP_400_BAD_REQUEST)
+
+        for item in attendance_data:
+            enrollment_no = item['enrollment_no']
+            status = item['status']
+            
+            try:
+                student = StudentData.objects.get(enrollment_no=enrollment_no)
+                subject = SubjectDetails.objects.get(subject_id=subject_id)
+            except (StudentData.DoesNotExist, SubjectDetails.DoesNotExist):
+                continue
+
+            att_record, created = Attendance.objects.get_or_create(
+                enrollment_no=enrollment_no,
+                subject_id=subject_id,
+                semester=student.semester,
+                subject_name=subject.subject_name,
+                defaults={'total_lectures': 0, 'total_attended': 0}
+            )
+            
+            att_record.total_lectures += 1
+            if status == 'present':
+                att_record.total_attended += 1
+            
+            att_record.attd_date = today
+            att_record.save()
+            
+        return Response({"status": "success"}, status=status.HTTP_201_CREATED)
