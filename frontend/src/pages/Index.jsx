@@ -616,38 +616,10 @@ function Index() {
               </div>
             ))}
           </div>
-
-          {/* Call to Action */}
-          {/* <div className="text-center mt-16 animate-fade-in-up" style={{ animationDelay: '1s' }}>
-            <button className="group bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-10 py-4 rounded-2xl font-bold text-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 flex items-center mx-auto">
-              Discover Our Story
-              <ArrowRight className="w-5 h-5 ml-3 group-hover:translate-x-1 transition-transform duration-300" />
-            </button>
-          </div> */}
         </div>
       </section>
 
       {/* Animated Stats Section */}
-      {/* <section className="py-16 bg-white-600 overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            {[
-              { number: '25,000+', label: 'Active Students', icon: Users },
-              { number: '1,200+', label: 'Faculty Members', icon: Award },
-              { number: '50+', label: 'Academic Programs', icon: BookOpen },
-              { number: '98%', label: 'Success Rate', icon: Star }
-            ].map((stat, index) => (
-              <div key={index} className="text-white animate-fade-in-up group" style={{ animationDelay: `${index * 0.2}s` }}>
-                <div className="w-16 h-16 bg-white/20 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 group-hover:rotate-12 transition-all duration-300">
-                  <stat.icon className="w-8 h-8 text-white" />
-                </div>
-                <div className="text-3xl font-bold mb-2 group-hover:scale-110 transition-transform duration-300">{stat.number}</div>
-                <div className="text-blue-100">{stat.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section> */}
            <section className="py-16 bg-white overflow-hidden">
   <div className="max-w-7xl mx-auto px-6">
     <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">

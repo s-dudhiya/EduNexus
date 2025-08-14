@@ -22,6 +22,14 @@ import {
   LogOut,
   Home,
   GraduationCap,
+  Shield,
+  Scroll,
+  
+  BookAIcon,
+  University,
+  BookDashedIcon,
+  BookOpenIcon,
+  LayoutDashboardIcon
 } from 'lucide-react';
 
 // Default student modules list
@@ -46,12 +54,11 @@ export function AppSidebar({
   return (
     <Sidebar
       collapsible="icon"
-      className="border-r border-blue-100 bg-gradient-to-b from-blue-50 via-white to-indigo-50 shadow-md"
-    >
+      className="border-r border-blue-100 bg-gradient-to-b from-blue-50 via-white to-indigo-50 shadow-md">
 <SidebarHeader className="h-16 flex items-left border-b border-blue-100 bg-white/80 backdrop-blur-sm px-4 py-4">
   <div className="flex items-center space-x-3 -ml-2">
-    <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-sm">
-      <GraduationCap className="h-4 w-4 text-white" />
+    <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-sm">
+      <LayoutDashboardIcon className="h-5 w-5 text-white" />
     </div>
     {!isCollapsed && (
       <span className="text-lg font-bold text-blue-700 tracking-tight select-none">

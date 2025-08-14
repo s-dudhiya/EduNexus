@@ -68,7 +68,7 @@ const FacultyDashboard = () => {
             <SidebarTrigger />
 
             <div className="flex items-center flex-1">
-              <h1 className="text-xl font-bold text-blue-700">
+              <h1 className="text-xl font-bold text-blue-500">
                 {modules.find(m => m.id === activeModule)?.title || 'Faculty Dashboard'}
               </h1>
             </div>

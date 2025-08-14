@@ -232,7 +232,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Eye, EyeOff, GraduationCap, AlertCircle, BookOpen, Users, Award, ArrowLeft,Shield,ArrowRight } from 'lucide-react';
+import { Eye, EyeOff, GraduationCap, AlertCircle, BookOpen, Users, Award, ArrowLeft,Shield,ArrowRight, UserCog, ClipboardList, BookOpenText } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -398,7 +398,7 @@ export const AuthForm = () => {
                       <SelectItem value="faculty" className="py-4 text-gray-900 hover:bg-indigo-50 rounded-xl m-1">
                         <div className="flex items-center space-x-3">
                           <div className="w-8 h-8 bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-lg flex items-center justify-center">
-                            <Shield className="w-4 h-4 text-white" />
+                            <UserCog className="w-4 h-4 text-white" />
                           </div>
                           <span>Faculty Access</span>
                         </div>
@@ -460,28 +460,8 @@ export const AuthForm = () => {
                   )}
                 </div>
 
-                   {/* Modern Options */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <Checkbox
-                      id="remember"
-                      checked={formData.rememberMe}
-                      onCheckedChange={(checked) => handleInputChange('rememberMe', checked)}
-                      className="border-blue-300 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
-                    />
-                    <Label htmlFor="remember" className="text-sm text-gray-600">
-                      Remember me
-                    </Label>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="link"
-                    className="px-0 text-blue-600 hover:text-blue-700 text-sm"
-                    onClick={handleForgotPassword}
-                  >
-                    Forgot PIN?
-                  </Button>
-                </div>
+              
+                
                  {/* Modern Submit Button - Blue Theme */}
                 <Button 
                   type="submit" 
