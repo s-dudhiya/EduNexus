@@ -32,7 +32,7 @@ const Auth = () => {
             {/* EDUNEXUS Logo - Matching Landing Page */}
             <div className="flex items-center space-x-3 animate-fade-in-left">
               <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-sm transform hover:scale-110 transition-transform duration-300">
-                <span className="text-white font-bold text-lg">E</span>
+                <span className="text-white font-bold text-lg">EN</span>
               </div>
               <div>
                 <span className="text-xl font-bold text-gray-900">EDUNEXUS</span>
@@ -78,7 +78,7 @@ const Auth = () => {
             <div className="col-span-1 md:col-span-2">
               <div className="flex items-center space-x-3 mb-6 animate-fade-in-left">
                 <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center hover:rotate-12 transition-transform duration-300">
-                  <span className="text-white font-bold text-lg">E</span>
+                  <span className="text-white font-bold text-lg">EN</span>
                 </div>
                 <div>
                   <h3 className="text-xl font-bold">EduNexus</h3>
