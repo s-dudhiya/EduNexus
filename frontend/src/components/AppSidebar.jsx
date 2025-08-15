@@ -58,7 +58,7 @@ export function AppSidebar({
 <SidebarHeader className="h-16 flex items-left border-b border-blue-100 bg-white/80 backdrop-blur-sm px-4 py-4">
   <div className="flex items-center space-x-3 -ml-2">
     <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-sm">
-      <LayoutDashboardIcon className="h-5 w-5 text-white" />
+      <span className="text-white font-bold text-lg">EN</span>
     </div>
     {!isCollapsed && (
       <span className="text-lg font-bold text-blue-700 tracking-tight select-none">
