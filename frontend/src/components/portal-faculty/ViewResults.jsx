@@ -39,6 +39,7 @@ export default function ViewResults() {
   const [studentSearchTerm, setStudentSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [selectedTest, setSelectedTest] = useState('t1_marks');
+  const [selectedSubject, setSelectedSubject] = useState('All');
 
   // Fetch data
   const { data: exams, isLoading: examsLoading } = useQuery({ queryKey: ['exams'], queryFn: fetchExams, initialData: [] });
@@ -65,22 +66,101 @@ export default function ViewResults() {
     return () => clearTimeout(handler);
   }, [studentSearchTerm]);
 
-  // Filtering logic
+  // Ranking and filtering logic for exam results
+  const rankedExamResults = useMemo(() => {
+    if (!examResults || examResults.length === 0) return [];
+
+    const studentTotals = new Map();
+    examResults.forEach(result => {
+      const enroll = result.enrollment_no;
+      const total = result.code_marks + result.mcq_marks;
+      if (!studentTotals.has(enroll)) {
+        studentTotals.set(enroll, { enroll, name: result.student_name, total: 0 });
+      }
+      studentTotals.get(enroll).total += total;
+    });
+
+    const sortedStudents = Array.from(studentTotals.values()).sort((a, b) => b.total - a.total);
+
+    let rank = 1;
+    let prevTotal = -1;
+    sortedStudents.forEach((stud, index) => {
+      if (index > 0 && stud.total < prevTotal) {
+        rank = index + 1;
+      }
+      stud.rank = rank;
+      prevTotal = stud.total;
+    });
+
+    const rankMap = new Map(sortedStudents.map(s => [s.enroll, s.rank]));
+
+    return examResults.map(result => ({
+      ...result,
+      total: result.code_marks + result.mcq_marks,
+      rank: rankMap.get(result.enrollment_no)
+    }));
+  }, [examResults]);
+
   const filteredExamResults = useMemo(() => {
-    if (!examResults) return [];
-    return examResults.filter(result => 
+    return rankedExamResults.filter(result => 
       result.student_name.toLowerCase().includes(examStudentSearchTerm.toLowerCase()) ||
       result.enrollment_no.toString().includes(examStudentSearchTerm)
     );
-  }, [examResults, examStudentSearchTerm]);
+  }, [rankedExamResults, examStudentSearchTerm]);
+
+  // Compute unique subjects for current semester marks
+  const uniqueSubjects = useMemo(() => {
+    if (!currentSemMarks || currentSemMarks.length === 0) return [];
+    const subjectsSet = new Set(currentSemMarks.map(mark => mark.subject_name));
+    return ['All', ...Array.from(subjectsSet)];
+  }, [currentSemMarks]);
+
+  // Filter by selected subject
+  const filteredBySubject = useMemo(() => {
+    if (selectedSubject === 'All') return currentSemMarks;
+    return currentSemMarks.filter(mark => mark.subject_name === selectedSubject);
+  }, [currentSemMarks, selectedSubject]);
+
+  // Ranking logic for filtered current semester marks
+  const rankedCurrentSemMarks = useMemo(() => {
+    if (!filteredBySubject || filteredBySubject.length === 0) return [];
+
+    const studentTotals = new Map();
+    filteredBySubject.forEach(mark => {
+      const enroll = mark.enrollment_number;
+      const marksVal = mark[selectedTest] || 0;
+      if (!studentTotals.has(enroll)) {
+        studentTotals.set(enroll, { enroll, name: mark.student_name, total: 0 });
+      }
+      studentTotals.get(enroll).total += marksVal;
+    });
+
+    const sortedStudents = Array.from(studentTotals.values()).sort((a, b) => b.total - a.total);
+
+    let rank = 1;
+    let prevTotal = -1;
+    sortedStudents.forEach((stud, index) => {
+      if (index > 0 && stud.total < prevTotal) {
+        rank = index + 1;
+      }
+      stud.rank = rank;
+      prevTotal = stud.total;
+    });
+
+    const rankMap = new Map(sortedStudents.map(s => [s.enroll, s.rank]));
+
+    return filteredBySubject.map(mark => ({
+      ...mark,
+      rank: rankMap.get(mark.enrollment_number)
+    }));
+  }, [filteredBySubject, selectedTest]);
 
   const filteredCurrentSemMarks = useMemo(() => {
-    if (!currentSemMarks) return [];
-    return currentSemMarks.filter(mark =>
+    return rankedCurrentSemMarks.filter(mark =>
         mark.student_name.toLowerCase().includes(currentSemSearchTerm.toLowerCase()) ||
         mark.enrollment_number.toString().includes(currentSemSearchTerm)
     );
-  }, [currentSemMarks, currentSemSearchTerm]);
+  }, [rankedCurrentSemMarks, currentSemSearchTerm]);
 
   const cgpaChartData = useMemo(() => {
     if (!studentMarks?.past) return [];
@@ -124,16 +204,17 @@ export default function ViewResults() {
                 {examResultsLoading && <div className="flex justify-center p-4"><Loader2 className="h-6 w-6 animate-spin" /></div>}
                 {selectedExam && !examResultsLoading && (
                   <Table className="mt-4">
-                    <TableHeader><TableRow><TableHead>Enrollment No</TableHead><TableHead>Student Name</TableHead><TableHead>Subject</TableHead><TableHead>Code</TableHead><TableHead>MCQ</TableHead><TableHead>Total</TableHead></TableRow></TableHeader>
+                    <TableHeader><TableRow><TableHead>Rank</TableHead><TableHead>Enrollment No</TableHead><TableHead>Student Name</TableHead><TableHead>Subject</TableHead><TableHead>Code</TableHead><TableHead>MCQ</TableHead><TableHead>Total</TableHead></TableRow></TableHeader>
                     <TableBody>
                       {filteredExamResults.map((result) => (
                         <TableRow key={result.id}>
+                          <TableCell>{result.rank}</TableCell>
                           <TableCell>{result.enrollment_no}</TableCell>
                           <TableCell>{result.student_name}</TableCell>
                           <TableCell>{result.subject_name}</TableCell>
                           <TableCell>{result.code_marks}</TableCell>
                           <TableCell>{result.mcq_marks}</TableCell>
-                          <TableCell>{result.code_marks + result.mcq_marks}</TableCell>
+                          <TableCell>{result.total}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -152,14 +233,23 @@ export default function ViewResults() {
                             <SelectItem value="t3_marks">Test 3 Marks</SelectItem>
                         </SelectContent>
                     </Select>
+                    <Select onValueChange={setSelectedSubject} value={selectedSubject}>
+                        <SelectTrigger className="w-[280px]"><SelectValue placeholder="Select Subject" /></SelectTrigger>
+                        <SelectContent>
+                            {uniqueSubjects.map((sub) => (
+                                <SelectItem key={sub} value={sub}>{sub}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </div>
                 {currentSemMarksLoading && <div className="flex justify-center p-4"><Loader2 className="h-6 w-6 animate-spin" /></div>}
                 {!currentSemMarksLoading && (
                     <Table className="mt-4">
-                        <TableHeader><TableRow><TableHead>Enrollment No</TableHead><TableHead>Student Name</TableHead><TableHead>Subject</TableHead><TableHead>Marks</TableHead></TableRow></TableHeader>
+                        <TableHeader><TableRow><TableHead>Rank</TableHead><TableHead>Enrollment No</TableHead><TableHead>Student Name</TableHead><TableHead>Subject</TableHead><TableHead>Marks</TableHead></TableRow></TableHeader>
                         <TableBody>
                             {filteredCurrentSemMarks.map((mark) => (
                                 <TableRow key={mark.id}>
+                                    <TableCell>{mark.rank}</TableCell>
                                     <TableCell>{mark.enrollment_number}</TableCell>
                                     <TableCell>{mark.student_name}</TableCell>
                                     <TableCell>{mark.subject_name}</TableCell>
