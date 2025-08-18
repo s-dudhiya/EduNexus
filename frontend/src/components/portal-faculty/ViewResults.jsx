@@ -102,10 +102,12 @@ export default function ViewResults() {
   }, [examResults]);
 
   const filteredExamResults = useMemo(() => {
-    return rankedExamResults.filter(result => 
-      result.student_name.toLowerCase().includes(examStudentSearchTerm.toLowerCase()) ||
-      result.enrollment_no.toString().includes(examStudentSearchTerm)
-    );
+    return rankedExamResults
+      .filter(result => 
+        result.student_name.toLowerCase().includes(examStudentSearchTerm.toLowerCase()) ||
+        result.enrollment_no.toString().includes(examStudentSearchTerm)
+      )
+      .sort((a, b) => a.rank - b.rank);
   }, [rankedExamResults, examStudentSearchTerm]);
 
   // Compute unique subjects for current semester marks
@@ -156,10 +158,12 @@ export default function ViewResults() {
   }, [filteredBySubject, selectedTest]);
 
   const filteredCurrentSemMarks = useMemo(() => {
-    return rankedCurrentSemMarks.filter(mark =>
+    return rankedCurrentSemMarks
+      .filter(mark =>
         mark.student_name.toLowerCase().includes(currentSemSearchTerm.toLowerCase()) ||
         mark.enrollment_number.toString().includes(currentSemSearchTerm)
-    );
+      )
+      .sort((a, b) => a.rank - b.rank);
   }, [rankedCurrentSemMarks, currentSemSearchTerm]);
 
   const cgpaChartData = useMemo(() => {
