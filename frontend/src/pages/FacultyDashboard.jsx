@@ -34,7 +34,7 @@ const FacultyDashboard = () => {
   const modules = [
     { id: 'manage-exams', title: 'Manage Exams', icon: ClipboardCheck, component: ManageExams },
     { id: 'mark-attendance', title: 'Mark Attendance', icon: Users, component: MarkAttendance },
-    { id: 'student-chat', title: 'Chat', icon: MessageSquare, component: FacultyChat },
+    // { id: 'student-chat', title: 'Chat', icon: MessageSquare, component: FacultyChat },
     { id: 'see-results', title: 'See Results', icon: BarChart3, component: ViewResults },
     { id: 'upload-notes', title: 'Upload Notes', icon: FileText, component: UploadNotes }
   ];

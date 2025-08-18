@@ -19,7 +19,7 @@ import {
 import DashboardHome from '@/components/portal/Dashboard';
 import { AttendanceTracking } from '@/components/portal/AttendanceTracking';
 import { ExamPortal } from '@/components/portal/ExamPortal';
-import { FacultyStudentChat } from '@/components/portal/FacultyStudentChat';
+
 import { ResultViewing } from '@/components/portal/ResultViewing';
 import { NotesUpload } from '@/components/portal/NotesUpload';
 
@@ -39,7 +39,7 @@ const StudentDashboard = () => {
     { id: 'dashboard', title: 'Dashboard', component: DashboardHome },
     { id: 'attendance', title: 'Attendance', component: AttendanceTracking },
     { id: 'exams', title: 'Exam Portal', component: ExamPortal },
-    { id: 'chat', title: 'Messages', component: FacultyStudentChat },
+
     { id: 'results', title: 'Results', component: ResultViewing },
     { id: 'notes', title: 'Notes', component: NotesUpload },
   ];

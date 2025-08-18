@@ -37,7 +37,7 @@ const studentModules = [
   { id: 'dashboard', title: 'Dashboard', description: 'Overview and statistics', icon: Home },
   { id: 'attendance', title: 'Attendance', description: 'Track your attendance', icon: Users },
   { id: 'exams', title: 'Exam Portal', description: 'Online examinations', icon: ClipboardCheck },
-  { id: 'chat', title: 'Messages', description: 'Chat with faculty', icon: MessageSquare },
+  // { id: 'chat', title: 'Messages', description: 'Chat with faculty', icon: MessageSquare },
   { id: 'results', title: 'Results', description: 'View academic results', icon: BarChart3 },
   { id: 'notes', title: 'Notes', description: 'Upload and manage notes', icon: FileText }
 ];
