@@ -60,31 +60,46 @@ export function ExamPortal({ setSidebarLocked }) {
       if (!user) return;
 
       try {
-        const paperResponse = await axios.get('/api/exam-papers/');
-        const papers = paperResponse.data;
-        const studentSemester = user.semester;
+        // Fetch summary data which includes overall attendance
+        const summaryResponse = await axios.get(`/api/student-dashboard-summary/${user.enrollment_no}/`);
+        const overallAttendance = summaryResponse.data.overall_attendance;
 
+        if (overallAttendance < 75) {
+            setError(`Your overall attendance is ${overallAttendance}%, which is below 75%. You are not allowed to take any exams.`);
+            setExams([]);
+            setLoading(false);
+            return;
+        }
+
+        // If attendance is fine, fetch exam papers and results
+        const [paperResponse, resultsResponse] = await Promise.all([
+          axios.get('/api/exam-papers/'),
+          axios.get('/api/exam-results/'),
+        ]);
+
+        const papers = paperResponse.data;
+        const results = resultsResponse.data;
+        const studentSemester = user.semester;
+        
         const relevantPapers = papers.filter(p => p.sem === studentSemester);
 
         if (relevantPapers.length > 0) {
-          const resultsResponse = await axios.get('/api/exam-results/');
-          const results = resultsResponse.data;
-
-          const availablePapers = relevantPapers.filter(paper =>
+          const papersNotTaken = relevantPapers.filter(paper =>
             !results.some(result =>
               result.enrollment_no === user.enrollment_no && result.subject_id === paper.subject_id
             )
           );
 
-          if (availablePapers.length === 0) {
+          if (papersNotTaken.length === 0) {
             setError("You have already submitted all available exams for your semester.");
           } else {
-            setExams(availablePapers);
+            setExams(papersNotTaken);
           }
         } else {
           setError(`No exam papers found for semester ${studentSemester}.`);
         }
       } catch (err) {
+        console.error("Error fetching exam data:", err);
         setError("Failed to load exams. Please try again later.");
       } finally {
         setLoading(false);
@@ -508,7 +523,7 @@ export function ExamPortal({ setSidebarLocked }) {
             <div className="lg:col-span-3 space-y-6">
               <Card className="shadow-card">
                 <CardHeader>
-                                    <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2">
                     <span className="bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center text-sm flex-shrink-0">{currentQuestion + 1}</span>
                     {questions[currentQuestion]?.description}
                     <Badge variant="outline" className="ml-auto flex-shrink-0">{questions[currentQuestion]?.points} M</Badge>
