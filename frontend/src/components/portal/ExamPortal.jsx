@@ -127,7 +127,7 @@ export function ExamPortal({ setSidebarLocked }) {
       test_output_1: paper.test_output_1,
       test_output_2: paper.test_output_2
     });
-    setTimeLeft(1 * 60);
+    setTimeLeft(5 * 60);
     setExamState('details');
   };
 
