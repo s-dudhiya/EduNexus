@@ -567,16 +567,12 @@ class MarkAttendanceView(APIView):
 
         today = date.today()
         
+        # --- FIX: Check for existing attendance for the submitted students ---
         enrollment_numbers = [item['enrollment_no'] for item in attendance_data]
-        existing_attendance = Attendance.objects.filter(
-            subject_id=subject_id,
-            enrollment_no__in=enrollment_numbers,
-            attd_date=today
-        )
+        if Attendance.objects.filter(subject_id=subject_id, enrollment_no__in=enrollment_numbers, attd_date=today).exists():
+            return Response({"error": "Attendance has already been marked for this subject and branch today."}, status=status.HTTP_400_BAD_REQUEST)
 
-        if existing_attendance.exists():
-            return Response({"error": "Attendance has already been marked for this subject today."}, status=status.HTTP_400_BAD_REQUEST)
-
+        # --- REFACTORED LOGIC ---
         for item in attendance_data:
             enrollment_no = item['enrollment_no']
             statusi = item['status']
@@ -585,41 +581,29 @@ class MarkAttendanceView(APIView):
                 student = StudentData.objects.get(enrollment_no=enrollment_no)
                 subject = SubjectDetails.objects.get(subject_id=subject_id)
             except (StudentData.DoesNotExist, SubjectDetails.DoesNotExist):
+                # Log this event or handle it, for now we skip.
                 continue
 
-            try:
-                att_record = Attendance.objects.get(
-                    enrollment_no=enrollment_no,
-                    subject_id=subject_id,
-                    semester=student.semester,
-                    subject_name=subject.subject_name
-                )
-                created = False
-            except Attendance.DoesNotExist:
-                att_record = Attendance(
-                    enrollment_no=enrollment_no,
-                    subject_id=subject_id,
-                    semester=student.semester,
-                    subject_name=subject.subject_name,
-                    total_lectures=0,
-                    total_attended=0,
-                    attd_date=today  # Set here to satisfy NOT NULL
-                )
-                created = True
+            # Use get_or_create for cleaner logic. It finds an existing record
+            # or creates a new one if it doesn't exist.
+            att_record, created = Attendance.objects.get_or_create(
+                enrollment_no=enrollment_no,
+                subject_id=subject_id,
+                # Defaults are only used when creating a NEW record.
+                defaults={
+                    'semester': student.semester,
+                    'subject_name': subject.subject_name,
+                    'total_lectures': 0,
+                    'total_attended': 0,
+                }
+            )
 
-            att_record.total_lectures += 1
-            if statusi == 'present':
-                att_record.total_attended += 1
-
-            if not created:
-                att_record.attd_date = today  # Update for existing records
-
-            att_record.save()
-            
+            # This logic will now correctly update the record.
             att_record.total_lectures += 1
             if statusi == 'present':
                 att_record.total_attended += 1
             
+            # Always update the date to today for this submission.
             att_record.attd_date = today
             att_record.save()
             
